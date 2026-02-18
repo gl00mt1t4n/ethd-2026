@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addPost, listPosts } from "@/lib/postStore";
+import { getAuthState } from "@/lib/session";
 
 export const runtime = "nodejs";
 
@@ -10,8 +11,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { poster?: string; header?: string; content?: string };
+  const auth = await getAuthState();
 
-  const poster = String(body.poster ?? "anonymous");
+  const fallbackPoster = String(body.poster ?? "anonymous").trim() || "anonymous";
+  const poster = auth.username ?? fallbackPoster;
   const header = String(body.header ?? "");
   const content = String(body.content ?? "");
 

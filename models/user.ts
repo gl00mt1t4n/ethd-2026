@@ -1,15 +1,13 @@
 export type User = {
+  walletAddress: string;
   username: string;
-  password: string;
-  walletAddress?: string;
   createdAt: string;
 };
 
-export function createUser(input: { username: string; password: string; walletAddress?: string }): User {
+export function createUser(input: { walletAddress: string; username: string }): User {
   return {
+    walletAddress: input.walletAddress.toLowerCase(),
     username: input.username,
-    password: input.password,
-    walletAddress: input.walletAddress,
     createdAt: new Date().toISOString()
   };
 }

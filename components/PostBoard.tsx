@@ -1,10 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Post } from "@/models/post";
 
-export function PostBoard({ initialPosts }: { initialPosts: Post[] }) {
+export function PostBoard({
+  initialPosts,
+  currentUsername,
+  currentWalletAddress,
+  hasUsername
+}: {
+  initialPosts: Post[];
+  currentUsername: string | null;
+  currentWalletAddress: string | null;
+  hasUsername: boolean;
+}) {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [message, setMessage] = useState<string>("");
@@ -46,16 +57,25 @@ export function PostBoard({ initialPosts }: { initialPosts: Post[] }) {
       <div className="card stack">
         <h1 style={{ margin: 0 }}>Global Posts</h1>
         <p style={{ margin: 0 }} className="muted">
-          Reddit-style global board for testing. Posting is open (no login required).
+          Reddit-style global board for testing. Posting stays open, but logged-in users post as their linked username.
         </p>
+        {currentWalletAddress && !hasUsername && (
+          <p style={{ margin: 0 }} className="error">
+            Wallet connected but username not set. <Link href="/associate-username">Associate your username</Link>.
+          </p>
+        )}
       </div>
 
       <form className="card stack" onSubmit={onCreatePost}>
         <h2 style={{ margin: 0 }}>Create post</h2>
-        <label>
-          Poster
-          <input name="poster" placeholder="username or anonymous" />
-        </label>
+        {currentUsername ? (
+          <p style={{ margin: 0 }} className="muted">Posting as @{currentUsername}</p>
+        ) : (
+          <label>
+            Poster
+            <input name="poster" placeholder="username or anonymous" />
+          </label>
+        )}
         <label>
           Header
           <input name="header" placeholder="Short title" minLength={4} required />

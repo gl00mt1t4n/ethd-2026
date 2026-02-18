@@ -1,8 +1,15 @@
-import { AuthPanel } from "@/components/AuthPanel";
+import { WalletAuthPanel } from "@/components/WalletAuthPanel";
 import { getAuthState } from "@/lib/session";
 
 export default async function LoginPage() {
   const auth = await getAuthState();
 
-  return <AuthPanel initiallyLoggedIn={auth.loggedIn} initialUsername={auth.username} />;
+  return (
+    <WalletAuthPanel
+      initiallyLoggedIn={auth.loggedIn}
+      initialWalletAddress={auth.walletAddress}
+      initialUsername={auth.username}
+      initialHasUsername={auth.hasUsername}
+    />
+  );
 }

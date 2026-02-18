@@ -3,6 +3,11 @@ import path from "node:path";
 import { createUser, type User } from "@/models/user";
 
 const USERS_FILE = path.join(process.cwd(), "data", "users.txt");
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,24}$/;
+
+function isWalletAddress(value: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(value);
+}
 
 function parseLine(line: string): User | null {
   const trimmed = line.trim();
@@ -10,16 +15,19 @@ function parseLine(line: string): User | null {
     return null;
   }
 
-  const [username, password] = trimmed.split(":");
-  if (!username || !password) {
+  try {
+    const parsed = JSON.parse(trimmed) as User;
+    if (!isWalletAddress(parsed.walletAddress) || !parsed.username || !parsed.createdAt) {
+      return null;
+    }
+    return {
+      walletAddress: parsed.walletAddress.toLowerCase(),
+      username: parsed.username,
+      createdAt: parsed.createdAt
+    };
+  } catch {
     return null;
   }
-
-  return {
-    username,
-    password,
-    createdAt: new Date(0).toISOString()
-  };
 }
 
 async function ensureUsersFile(): Promise<void> {
@@ -40,46 +48,49 @@ export async function listUsers(): Promise<User[]> {
     .filter((user): user is User => user !== null);
 }
 
-export async function findUserByUsername(username: string): Promise<User | null> {
+export async function findUserByWallet(walletAddress: string): Promise<User | null> {
+  const normalized = walletAddress.toLowerCase();
   const users = await listUsers();
-  return users.find((user) => user.username.toLowerCase() === username.toLowerCase()) ?? null;
+  return users.find((user) => user.walletAddress === normalized) ?? null;
 }
 
-export async function addUser(username: string, password: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function findUserByUsername(username: string): Promise<User | null> {
+  const normalized = username.toLowerCase();
+  const users = await listUsers();
+  return users.find((user) => user.username.toLowerCase() === normalized) ?? null;
+}
+
+export async function associateUsername(
+  walletAddress: string,
+  username: string
+): Promise<{ ok: true; user: User } | { ok: false; error: string }> {
+  const normalizedWallet = walletAddress.toLowerCase().trim();
   const normalizedUsername = username.trim();
 
-  if (normalizedUsername.length < 3) {
-    return { ok: false, error: "Username must be at least 3 characters." };
+  if (!isWalletAddress(normalizedWallet)) {
+    return { ok: false, error: "Invalid wallet address." };
   }
 
-  if (normalizedUsername.includes(":")) {
-    return { ok: false, error: "Username cannot contain ':'." };
+  if (!USERNAME_REGEX.test(normalizedUsername)) {
+    return {
+      ok: false,
+      error: "Username must be 3-24 chars and only contain letters, numbers, and underscore."
+    };
   }
 
-  if (password.length < 8) {
-    return { ok: false, error: "Password must be at least 8 characters." };
+  const existingWalletOwner = await findUserByWallet(normalizedWallet);
+  if (existingWalletOwner) {
+    return { ok: false, error: "This wallet already has a username and cannot be changed." };
   }
 
-  if (password.includes(":")) {
-    return { ok: false, error: "Password cannot contain ':'." };
-  }
-
-  const existingUser = await findUserByUsername(normalizedUsername);
-  if (existingUser) {
+  const existingUsername = await findUserByUsername(normalizedUsername);
+  if (existingUsername) {
     return { ok: false, error: "Username already exists." };
   }
 
+  const user = createUser({ walletAddress: normalizedWallet, username: normalizedUsername });
   await ensureUsersFile();
-  const user = createUser({ username: normalizedUsername, password });
-  await fs.appendFile(USERS_FILE, `${user.username}:${user.password}\n`, "utf8");
-  return { ok: true };
-}
+  await fs.appendFile(USERS_FILE, `${JSON.stringify(user)}\n`, "utf8");
 
-export async function verifyLogin(username: string, password: string): Promise<boolean> {
-  const user = await findUserByUsername(username.trim());
-  if (!user) {
-    return false;
-  }
-
-  return user.password === password;
+  return { ok: true, user };
 }

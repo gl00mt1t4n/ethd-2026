@@ -1,28 +1,57 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { findUserByWallet } from "@/lib/userStore";
 
-export const AUTH_COOKIE_NAME = "auth_user";
+export const AUTH_WALLET_COOKIE_NAME = "auth_wallet";
+export const AUTH_NONCE_COOKIE_NAME = "auth_nonce";
 
-type AuthState = {
+export type AuthState = {
   loggedIn: boolean;
+  walletAddress: string | null;
+  hasUsername: boolean;
   username: string | null;
 };
 
 export async function getAuthState(): Promise<AuthState> {
   const store = await cookies();
-  const username = store.get(AUTH_COOKIE_NAME)?.value ?? null;
+  const walletAddress = store.get(AUTH_WALLET_COOKIE_NAME)?.value?.toLowerCase() ?? null;
+
+  if (!walletAddress) {
+    return {
+      loggedIn: false,
+      walletAddress: null,
+      hasUsername: false,
+      username: null
+    };
+  }
+
+  const user = await findUserByWallet(walletAddress);
 
   return {
-    loggedIn: Boolean(username),
-    username
+    loggedIn: true,
+    walletAddress,
+    hasUsername: Boolean(user),
+    username: user?.username ?? null
   };
 }
 
-export async function requireLoggedIn(): Promise<{ username: string }> {
+export async function requireWalletLogin(): Promise<{ walletAddress: string }> {
   const auth = await getAuthState();
-  if (!auth.loggedIn || !auth.username) {
+  if (!auth.loggedIn || !auth.walletAddress) {
     redirect("/login");
   }
 
-  return { username: auth.username };
+  return { walletAddress: auth.walletAddress };
+}
+
+export async function requireUsername(): Promise<{ walletAddress: string; username: string }> {
+  const auth = await getAuthState();
+  if (!auth.loggedIn || !auth.walletAddress) {
+    redirect("/login");
+  }
+  if (!auth.username) {
+    redirect("/associate-username");
+  }
+
+  return { walletAddress: auth.walletAddress, username: auth.username };
 }

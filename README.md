@@ -1,6 +1,16 @@
 # ethd-2026
 
-Basic Next.js + TypeScript scaffold with plaintext file-based login and global text-file posts.
+Next.js + TypeScript scaffold with ADI wallet login and global text-file posts.
+
+## ADI chain details used
+
+Sourced from ADI docs: https://docs.adi.foundation/how-to-start/adi-network-mainnet-details
+
+- RPC URL: `https://rpc.adifoundation.ai/`
+- Chain ID (decimal): `36900`
+- Chain ID (hex): `0x9024`
+- Native token: `ADI`
+- Explorer: `https://explorer.adifoundation.ai/`
 
 ## Run
 
@@ -8,30 +18,33 @@ Basic Next.js + TypeScript scaffold with plaintext file-based login and global t
 2. `npm run dev`
 3. Open:
    - `http://localhost:3000/login`
+   - `http://localhost:3000/associate-username`
    - `http://localhost:3000/posts`
 
-## Current auth behavior
+## Auth flow
 
-- Users are stored in `data/users.txt` as `username:password` (plain text).
-- Login sets an `auth_user` cookie.
-- Auth state helper (`loggedIn` / `not logged in`) is in `lib/session.ts` and shown in layout/login UI.
+1. Connect wallet on ADI chain.
+2. Sign server challenge message.
+3. Session cookie stores wallet address.
+4. If wallet has no username yet, user is sent to `associate-username`.
+5. Username can be set only once and cannot be changed.
 
-## Current post behavior
+## Storage
 
-- Posts are stored globally in `data/posts.txt` (one JSON post per line).
-- Fields: `id`, `poster`, `header`, `content`, `createdAt`.
-- Posting is open and not gated by login.
-
-## Folder intent
-
-- `models/`: pure data shapes and constructors (`User`, `Post`).
-- `lib/`: operational logic (file stores, auth/session helpers).
+- `data/users.txt`: JSONL records of wallet-to-username mapping.
+- `data/posts.txt`: JSONL records of global posts.
 
 ## APIs
 
-- `POST /api/auth/signup`
-- `POST /api/auth/login`
+- `POST /api/auth/challenge`
+- `POST /api/auth/verify`
+- `POST /api/auth/associate-username`
 - `POST /api/auth/logout`
 - `GET /api/auth/status`
 - `GET /api/posts`
 - `POST /api/posts`
+
+## Folder intent
+
+- `models/`: data shapes and constructors (`User`, `Post`).
+- `lib/`: shared app logic (session helpers, stores, ADI constants).

@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AgentExchange Scaffold",
-  description: "Basic social scaffold with text-file login"
+  description: "Wallet-auth social scaffold on ADI"
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -18,11 +18,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <header className="topbar card">
             <div className="brand">AgentExchange</div>
             <nav className="navlinks">
-              <Link href="/login">Login</Link>
+              <Link href="/login">Wallet Login</Link>
+              <Link href="/associate-username">Associate Username</Link>
               <Link href="/posts">Posts</Link>
             </nav>
             <div className={auth.loggedIn ? "status success" : "status muted"}>
-              {auth.loggedIn ? `Logged in: @${auth.username}` : "Not logged in"}
+              {!auth.loggedIn && "Not logged in"}
+              {auth.loggedIn && !auth.username && `Wallet: ${auth.walletAddress}`}
+              {auth.loggedIn && auth.username && `@${auth.username}`}
             </div>
           </header>
           {children}
