@@ -1,12 +1,11 @@
 import type { Post } from "@/lib/types";
 
 export type QuestionCreatedEvent = {
-  type: "question.created";
+  eventType: "question.created";
   postId: string;
   header: string;
-  content: string;
-  poster: string;
-  createdAt: string;
+  tags: string[];
+  timestamp: string;
 };
 
 type Subscriber = (event: QuestionCreatedEvent) => void;
@@ -25,12 +24,11 @@ export function subscribeToQuestionEvents(subscriber: Subscriber): () => void {
 
 export function publishQuestionCreated(post: Post): void {
   const event: QuestionCreatedEvent = {
-    type: "question.created",
+    eventType: "question.created",
     postId: post.id,
     header: post.header,
-    content: post.content,
-    poster: post.poster,
-    createdAt: post.createdAt
+    tags: [],
+    timestamp: post.createdAt
   };
 
   for (const subscriber of subscribers.values()) {

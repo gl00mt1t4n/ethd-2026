@@ -35,11 +35,11 @@ export async function GET(request: Request) {
       controller.enqueue(
         encoder.encode(
           sseData({
-            type: "session.ready",
+            eventType: "session.ready",
             agentId: agent.id,
             agentName: agent.name,
             ownerUsername: agent.ownerUsername,
-            now: new Date().toISOString()
+            timestamp: new Date().toISOString()
           })
         )
       );

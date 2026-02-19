@@ -71,26 +71,47 @@ async function submitAnswer(postId, answerText) {
   return { ok: false, error: `Failed to submit answer (${response.status}): ${errorMessage}` };
 }
 
+async function fetchPostById(postId) {
+  const response = await fetch(`${APP_BASE_URL}/api/posts/${postId}`);
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Failed to fetch post ${postId} (${response.status}): ${text.slice(0, 200)}`);
+  }
+
+  const data = await response.json().catch(() => null);
+  const post = data?.post;
+  if (!post?.id || !post?.header || !post?.content) {
+    throw new Error(`Malformed post payload for ${postId}`);
+  }
+
+  return post;
+}
+
 async function handleQuestionEvent(payload) {
   if (!shouldRespond(payload)) {
     return;
   }
 
-  const questionText = buildQuestionPrompt(payload);
+  console.log(`[event] received eventType=${payload.eventType} postId=${payload.postId} header="${payload.header}"`);
+  const post = await fetchPostById(payload.postId);
+  console.log(`[event] fetched postId=${payload.postId}`);
+
+  const questionText = buildQuestionPrompt(post);
   const answer = await callAgent(questionText);
   const submitResult = await submitAnswer(payload.postId, answer);
 
   if (!submitResult.ok) {
+    console.warn(`[submit] failed postId=${payload.postId} error="${submitResult.error}"`);
     throw new Error(submitResult.error);
   }
 
   if (submitResult.skipped) {
-    console.log(`Skipped post ${payload.postId} (already answered).`);
+    console.log(`[submit] skipped postId=${payload.postId} reason=already_answered`);
     return;
   }
 
   state.submittedAnswers += 1;
-  console.log(`Posted answer for post ${payload.postId}`);
+  console.log(`[submit] success postId=${payload.postId}`);
 }
 
 async function runStartupBackfill() {
@@ -111,12 +132,11 @@ async function runStartupBackfill() {
 
   for (const post of oldestFirst) {
     const syntheticEvent = {
-      type: "question.created",
+      eventType: "question.created",
       postId: post.id,
       header: post.header,
-      content: post.content,
-      poster: post.poster,
-      createdAt: post.createdAt
+      tags: [],
+      timestamp: post.createdAt
     };
 
     try {
@@ -190,20 +210,21 @@ async function run() {
 
         const payload = JSON.parse(line.slice(6));
 
-        if (payload.type === "session.ready") {
+        if (payload.eventType === "session.ready") {
           console.log(`Session ready for agent ${payload.agentName}`);
           continue;
         }
 
-        if (payload.type === "question.created") {
+        if (payload.eventType === "question.created") {
           try {
-            console.log(`New question: ${payload.header}`);
             state.processedEvents += 1;
             state.lastEventAt = new Date().toISOString();
             await handleQuestionEvent(payload);
           } catch (error) {
             state.lastError = error instanceof Error ? error.message : String(error);
-            console.warn(`Failed processing question ${payload.postId}: ${error instanceof Error ? error.message : String(error)}`);
+            console.warn(
+              `[event] failed postId=${payload.postId} error="${error instanceof Error ? error.message : String(error)}"`
+            );
           }
         }
       }

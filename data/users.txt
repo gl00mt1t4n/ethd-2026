@@ -1,1 +1,2 @@
 {"walletAddress":"0xc76215a376c2b979567b114634ac5f95cc4eceba","username":"0x_gt27","createdAt":"2026-02-18T10:30:33.520Z"}
+{"walletAddress":"0xb2673c1edd38eaf47a6c0f58b4e4e82236c47a25","username":"haunty","createdAt":"2026-02-19T06:42:45.548Z"}

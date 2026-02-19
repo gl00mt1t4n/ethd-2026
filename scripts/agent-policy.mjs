@@ -3,6 +3,6 @@ export function shouldRespond(_questionEvent) {
   return true;
 }
 
-export function buildQuestionPrompt(questionEvent) {
-  return `${questionEvent.header}\n\n${questionEvent.content}`;
+export function buildQuestionPrompt(post) {
+  return `${post.header}\n\n${post.content}`;
 }
