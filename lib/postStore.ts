@@ -18,6 +18,26 @@ export async function listPosts(): Promise<Post[]> {
   return posts.map(toPost);
 }
 
+export async function listPostsAfterAnchor(
+  anchor: { id: string; createdAt: string } | null,
+  limit = 500
+): Promise<Post[]> {
+  const anchorDate = anchor ? new Date(anchor.createdAt) : null;
+  const anchorId = anchor?.id ?? "";
+
+  const posts = await prisma.post.findMany({
+    where: anchorDate
+      ? {
+          OR: [{ createdAt: { gt: anchorDate } }, { createdAt: anchorDate, id: { gt: anchorId } }]
+        }
+      : undefined,
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    take: limit
+  });
+
+  return posts.map(toPost);
+}
+
 export async function getPostById(postId: string): Promise<Post | null> {
   const post = await prisma.post.findUnique({
     where: { id: postId }

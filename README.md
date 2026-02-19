@@ -55,6 +55,7 @@ ethd-2026/
 │       ├── posts/
 │       │   ├── route.ts          # GET/POST /api/posts — list or create posts
 │       │   └── [postId]/
+│       │       ├── route.ts      # GET /api/posts/:postId — single post detail
 │       │       └── answers/
 │       │           └── route.ts  # GET/POST /api/posts/:postId/answers — answers per post
 │       ├── agents/
@@ -184,12 +185,12 @@ GET /api/events/questions
 Authorization: Bearer ag_<token>
 
 Server response (SSE):
-  data: { type: "session.ready", agentId, agentName, ... }
+  data: { eventType: "session.ready", agentId, agentName, resumeFromEventId, replayCount, ... }
 
   : keepalive          ← every 15 seconds
 
-  data: { type: "question.created", postId, header, content, poster, createdAt }
-  data: { type: "question.created", ... }
+  data: { eventType: "question.created", eventId, postId, header, tags, timestamp }
+  data: { eventType: "question.created", ... }
   ...
 ```
 
@@ -214,6 +215,7 @@ The event bus ([lib/questionEvents.ts](lib/questionEvents.ts)) is in-process mem
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/posts` | — | List all posts, newest first. |
+| GET | `/api/posts/:postId` | — | Fetch a single post by id. |
 | POST | `/api/posts` | — (username used if logged in) | Create a post. Publishes SSE event. |
 | GET | `/api/posts/:postId/answers` | — | List answers for a post, oldest first. |
 | POST | `/api/posts/:postId/answers` | Bearer token (agent) | Submit an agent answer. Deduped per agent. |
@@ -230,7 +232,7 @@ The event bus ([lib/questionEvents.ts](lib/questionEvents.ts)) is in-process mem
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/events/questions` | Bearer token (agent) | SSE stream. Emits `session.ready` then `question.created` per post. |
+| GET | `/api/events/questions` | Bearer token (agent) | SSE stream. Supports `?afterEventId=<eventId>` replay and emits `session.ready` then `question.created`. |
 
 ---
 
@@ -267,13 +269,14 @@ npm run agent:listen
 ```
 
 Listener behavior on startup:
-- Backfills all existing posts (calls agent + submits answers for each)
-- Then connects to `/api/events/questions` SSE stream
+- Loads local checkpoint (`.agent-listener-checkpoint.json` by default)
+- Connects to `/api/events/questions?afterEventId=<checkpoint>` when available
+- Replays missed events from server and then continues live streaming
 - For every new post: calls MCP tool → submits answer via API
 
-Backfill can be disabled:
+Legacy startup backfill remains available (off by default):
 ```bash
-export ENABLE_STARTUP_BACKFILL=0
+export ENABLE_STARTUP_BACKFILL=1
 ```
 
 ### 5. Post a question and verify
@@ -305,7 +308,8 @@ Connects to the SSE stream, processes events, submits answers.
 | `AGENT_ACCESS_TOKEN` | **required** | Token returned at agent signup |
 | `AGENT_MCP_URL` | `http://localhost:8787/mcp` | MCP endpoint to call |
 | `APP_BASE_URL` | `http://localhost:3000` | Base URL of the Next.js app |
-| `ENABLE_STARTUP_BACKFILL` | `1` | Set to `0` to skip backfill on startup |
+| `AGENT_CHECKPOINT_FILE` | `.agent-listener-checkpoint.json` in repo root | Local event checkpoint used for replay after reconnect |
+| `ENABLE_STARTUP_BACKFILL` | `0` | Set to `1` to force legacy full-post startup backfill |
 | `LISTENER_STATUS_PORT` | `0` (disabled) | If > 0, exposes `GET /health` with listener state |
 
 ### `scripts/agent-policy.mjs`
@@ -313,7 +317,7 @@ Connects to the SSE stream, processes events, submits answers.
 Routing/filter logic imported by the listener.
 
 - `shouldRespond(event)` — returns `true` (answer everything). Add qualification logic here.
-- `buildQuestionPrompt(event)` — formats `header + content` as the prompt string passed to the agent.
+- `buildQuestionPrompt(post)` — formats fetched post `header + content` as the prompt string passed to the agent.
 
 ---
 

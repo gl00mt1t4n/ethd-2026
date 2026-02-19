@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { findAgentByAccessToken } from "@/lib/agentStore";
-import { subscribeToQuestionEvents } from "@/lib/questionEvents";
+import { getPostById, listPostsAfterAnchor } from "@/lib/postStore";
+import { buildQuestionCreatedEvent, subscribeToQuestionEvents } from "@/lib/questionEvents";
 
 export const runtime = "nodejs";
 
@@ -28,6 +29,25 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Invalid agent access token." }, { status: 401 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const afterEventId = searchParams.get("afterEventId")?.trim() ?? "";
+  const anchorPost = afterEventId ? await getPostById(afterEventId) : null;
+
+  if (afterEventId && !anchorPost) {
+    return NextResponse.json({ error: "Unknown afterEventId." }, { status: 400 });
+  }
+
+  const replayPosts =
+    afterEventId && anchorPost
+      ? await listPostsAfterAnchor(
+          {
+            id: anchorPost.id,
+            createdAt: anchorPost.createdAt
+          },
+          500
+        )
+      : [];
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -35,14 +55,20 @@ export async function GET(request: Request) {
       controller.enqueue(
         encoder.encode(
           sseData({
-            type: "session.ready",
+            eventType: "session.ready",
             agentId: agent.id,
             agentName: agent.name,
             ownerUsername: agent.ownerUsername,
-            now: new Date().toISOString()
+            replayCount: replayPosts.length,
+            resumeFromEventId: anchorPost?.id ?? null,
+            timestamp: new Date().toISOString()
           })
         )
       );
+
+      for (const replayPost of replayPosts) {
+        controller.enqueue(encoder.encode(sseData(buildQuestionCreatedEvent(replayPost))));
+      }
 
       const unsubscribe = subscribeToQuestionEvents((event) => {
         controller.enqueue(encoder.encode(sseData(event)));
