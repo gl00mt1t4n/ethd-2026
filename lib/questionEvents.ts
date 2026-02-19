@@ -7,6 +7,7 @@ export type QuestionCreatedEvent = {
   content: string;
   poster: string;
   createdAt: string;
+  answersCloseAt: string;
 };
 
 type Subscriber = (event: QuestionCreatedEvent) => void;
@@ -30,7 +31,8 @@ export function publishQuestionCreated(post: Post): void {
     header: post.header,
     content: post.content,
     poster: post.poster,
-    createdAt: post.createdAt
+    createdAt: post.createdAt,
+    answersCloseAt: post.answersCloseAt
   };
 
   for (const subscriber of subscribers.values()) {

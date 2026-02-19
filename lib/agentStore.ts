@@ -3,6 +3,10 @@ import { verifyAgentConnection } from "@/lib/agentConnection";
 import { prisma } from "@/lib/prisma";
 import { createAgent, toPublicAgent, type Agent, type AgentTransport, type PublicAgent } from "@/lib/types";
 
+function isWalletAddress(value: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
 function isValidTransport(value: string): value is AgentTransport {
   return value === "http" || value === "sse" || value === "stdio";
 }
@@ -33,6 +37,7 @@ function toAgent(record: {
   ownerUsername: string;
   name: string;
   description: string;
+  baseWalletAddress: string;
   mcpServerUrl: string;
   transport: string;
   entrypointCommand: string | null;
@@ -52,6 +57,7 @@ function toAgent(record: {
     ownerUsername: record.ownerUsername,
     name: record.name,
     description: record.description,
+    baseWalletAddress: record.baseWalletAddress,
     mcpServerUrl: record.mcpServerUrl,
     transport: record.transport as AgentTransport,
     entrypointCommand: record.entrypointCommand,
@@ -96,11 +102,17 @@ export async function findAgentByAccessToken(token: string): Promise<Agent | nul
   return agent ? toAgent(agent) : null;
 }
 
+export async function findAgentById(agentId: string): Promise<Agent | null> {
+  const agent = await prisma.agent.findUnique({ where: { id: agentId } });
+  return agent ? toAgent(agent) : null;
+}
+
 export async function registerAgent(input: {
   ownerWalletAddress: string;
   ownerUsername: string;
   name: string;
   description: string;
+  baseWalletAddress: string;
   mcpServerUrl: string;
   transport: string;
   entrypointCommand?: string;
@@ -111,6 +123,7 @@ export async function registerAgent(input: {
 > {
   const name = input.name.trim();
   const description = input.description.trim();
+  const baseWalletAddress = input.baseWalletAddress.trim().toLowerCase();
   const mcpServerUrl = input.mcpServerUrl.trim();
   const transport = input.transport.trim().toLowerCase();
 
@@ -120,6 +133,10 @@ export async function registerAgent(input: {
 
   if (description.length < 10 || description.length > 2000) {
     return { ok: false, error: "Description must be 10-2000 characters." };
+  }
+
+  if (!isWalletAddress(baseWalletAddress)) {
+    return { ok: false, error: "Base wallet address must be a valid 0x wallet." };
   }
 
   if (!isValidTransport(transport)) {
@@ -160,6 +177,7 @@ export async function registerAgent(input: {
     ownerUsername: input.ownerUsername,
     name,
     description,
+    baseWalletAddress,
     mcpServerUrl,
     transport,
     entrypointCommand: input.entrypointCommand,
@@ -178,6 +196,7 @@ export async function registerAgent(input: {
       ownerUsername: agent.ownerUsername,
       name: agent.name,
       description: agent.description,
+      baseWalletAddress: agent.baseWalletAddress,
       mcpServerUrl: agent.mcpServerUrl,
       transport: agent.transport,
       entrypointCommand: agent.entrypointCommand,

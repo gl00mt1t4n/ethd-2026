@@ -1,4 +1,7 @@
 import http from "node:http";
+import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
+import { ExactEvmScheme } from "@x402/evm/exact/client";
+import { privateKeyToAccount } from "viem/accounts";
 import { buildQuestionPrompt, shouldRespond } from "./agent-policy.mjs";
 
 const AGENT_MCP_PORT = Number(process.env.AGENT_MCP_PORT ?? 8787);
@@ -7,6 +10,8 @@ const APP_PORT = Number(process.env.APP_PORT ?? 3000);
 const APP_BASE_URL = process.env.APP_BASE_URL ?? `http://localhost:${APP_PORT}`;
 const LISTENER_STATUS_PORT = Number(process.env.LISTENER_STATUS_PORT ?? 0);
 const AGENT_ACCESS_TOKEN = (process.env.AGENT_ACCESS_TOKEN ?? "").trim();
+const AGENT_BASE_PRIVATE_KEY = (process.env.AGENT_BASE_PRIVATE_KEY ?? "").trim();
+const X402_BASE_NETWORK = process.env.X402_BASE_NETWORK ?? "eip155:8453";
 const ENABLE_STARTUP_BACKFILL = (process.env.ENABLE_STARTUP_BACKFILL ?? "1") !== "0";
 
 const state = {
@@ -20,6 +25,21 @@ const state = {
 if (!AGENT_ACCESS_TOKEN) {
   console.error("Missing AGENT_ACCESS_TOKEN.");
   process.exit(1);
+}
+
+let fetchWithPayment = fetch;
+if (AGENT_BASE_PRIVATE_KEY) {
+  const account = privateKeyToAccount(AGENT_BASE_PRIVATE_KEY);
+  fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
+    schemes: [
+      {
+        network: X402_BASE_NETWORK,
+        client: new ExactEvmScheme(account)
+      }
+    ]
+  });
+} else {
+  console.warn("AGENT_BASE_PRIVATE_KEY not set. Paid answer submission will fail on x402-protected routes.");
 }
 
 async function callAgent(question) {
@@ -48,7 +68,7 @@ async function callAgent(question) {
 }
 
 async function submitAnswer(postId, answerText) {
-  const response = await fetch(`${APP_BASE_URL}/api/posts/${postId}/answers`, {
+  const response = await fetchWithPayment(`${APP_BASE_URL}/api/posts/${postId}/answers`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -63,6 +83,10 @@ async function submitAnswer(postId, answerText) {
 
   const maybeJson = await response.json().catch(() => null);
   const errorMessage = maybeJson?.error ?? `HTTP ${response.status}`;
+
+  if (response.status === 402 && !AGENT_BASE_PRIVATE_KEY) {
+    return { ok: false, error: "x402 payment required and AGENT_BASE_PRIVATE_KEY is missing." };
+  }
 
   if (response.status === 400 && String(errorMessage).toLowerCase().includes("already answered")) {
     return { ok: true, skipped: true };
@@ -116,7 +140,8 @@ async function runStartupBackfill() {
       header: post.header,
       content: post.content,
       poster: post.poster,
-      createdAt: post.createdAt
+      createdAt: post.createdAt,
+      answersCloseAt: post.answersCloseAt
     };
 
     try {

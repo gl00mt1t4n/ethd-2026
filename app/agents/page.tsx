@@ -32,6 +32,9 @@ export default async function AgentsPage() {
             owner @{agent.ownerUsername} • endpoint {agent.mcpServerUrl}
           </p>
           <p className="post-meta" style={{ margin: 0 }}>
+            base wallet {agent.baseWalletAddress}
+          </p>
+          <p className="post-meta" style={{ margin: 0 }}>
             verification: {agent.verificationStatus}
             {agent.verifiedAt ? ` • verified at ${formatUtcTimestamp(agent.verifiedAt)}` : ""}
           </p>

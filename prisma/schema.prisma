@@ -17,35 +17,51 @@ model User {
 }
 
 model Post {
-  id        String   @id @db.VarChar(64)
-  poster    String   @db.VarChar(64)
-  header    String   @db.VarChar(280)
-  content   String
-  createdAt DateTime @db.Timestamptz(6)
+  id                  String    @id @db.VarChar(64)
+  poster              String    @db.VarChar(64)
+  header              String    @db.VarChar(280)
+  content             String
+  createdAt           DateTime  @db.Timestamptz(6)
+  requiredBidCents    Int       @default(75)
+  complexityTier      String    @default("medium") @db.VarChar(16)
+  complexityScore     Int       @default(3)
+  complexityModel     String?
+  answerWindowSeconds Int       @default(300)
+  answersCloseAt      DateTime  @db.Timestamptz(6)
+  settlementStatus    String    @default("open") @db.VarChar(16)
+  winnerAnswerId      String?   @db.VarChar(64)
+  winnerAgentId       String?   @db.VarChar(64)
+  settledAt           DateTime? @db.Timestamptz(6)
+  settlementTxHash    String?
+  poolTotalCents      Int       @default(0)
+  winnerPayoutCents   Int       @default(0)
+  platformFeeCents    Int       @default(0)
 
   answers Answer[]
 
   @@index([createdAt])
+  @@index([settlementStatus])
 }
 
 model Agent {
-  id                 String    @id @db.VarChar(64)
-  ownerWalletAddress String    @db.VarChar(42)
-  ownerUsername      String    @db.VarChar(24)
-  name               String    @db.VarChar(80)
-  description        String
-  mcpServerUrl       String
-  transport          String    @db.VarChar(16)
-  entrypointCommand  String?
-  tags               String[]  @default([])
-  createdAt          DateTime  @db.Timestamptz(6)
-  updatedAt          DateTime  @db.Timestamptz(6)
-  status             String    @db.VarChar(16)
-  authTokenHash      String    @unique
-  verificationStatus String    @db.VarChar(16)
-  verificationError  String?
-  verifiedAt         DateTime? @db.Timestamptz(6)
-  capabilities       String[]  @default([])
+  id                          String    @id @db.VarChar(64)
+  ownerWalletAddress          String    @db.VarChar(42)
+  ownerUsername               String    @db.VarChar(24)
+  name                        String    @db.VarChar(80)
+  description                 String
+  baseWalletAddress           String    @db.VarChar(42)
+  mcpServerUrl                String
+  transport                   String    @db.VarChar(16)
+  entrypointCommand           String?
+  tags                        String[]  @default([])
+  createdAt                   DateTime  @db.Timestamptz(6)
+  updatedAt                   DateTime  @db.Timestamptz(6)
+  status                      String    @db.VarChar(16)
+  authTokenHash               String    @unique
+  verificationStatus          String    @db.VarChar(16)
+  verificationError           String?
+  verifiedAt                  DateTime? @db.Timestamptz(6)
+  capabilities                String[]  @default([])
 
   answers Answer[]
 
@@ -54,12 +70,14 @@ model Agent {
 }
 
 model Answer {
-  id        String   @id @db.VarChar(64)
-  postId    String   @db.VarChar(64)
-  agentId   String   @db.VarChar(64)
-  agentName String   @db.VarChar(80)
-  content   String
-  createdAt DateTime @db.Timestamptz(6)
+  id             String   @id @db.VarChar(64)
+  postId         String   @db.VarChar(64)
+  agentId        String   @db.VarChar(64)
+  agentName      String   @db.VarChar(80)
+  content        String
+  bidAmountCents Int      @default(0)
+  paymentNetwork String   @db.VarChar(32)
+  createdAt      DateTime @db.Timestamptz(6)
 
   post  Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
   agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)

@@ -80,6 +80,25 @@ async function migratePosts() {
     const poster = String(row?.poster ?? "anonymous").trim() || "anonymous";
     const header = String(row?.header ?? "").trim();
     const content = String(row?.content ?? "").trim();
+    const createdAt = toDate(row?.createdAt);
+    const answerWindowSeconds = Number.isFinite(Number(row?.answerWindowSeconds))
+      ? Math.max(60, Math.min(3600, Math.floor(Number(row.answerWindowSeconds))))
+      : 300;
+    const answersCloseAt = row?.answersCloseAt
+      ? toDate(row.answersCloseAt)
+      : new Date(createdAt.getTime() + answerWindowSeconds * 1000);
+    const requiredBidCents = Number.isFinite(Number(row?.requiredBidCents))
+      ? Math.max(1, Math.floor(Number(row.requiredBidCents)))
+      : 75;
+    const complexityTier =
+      String(row?.complexityTier ?? "medium").toLowerCase() === "simple" ||
+      String(row?.complexityTier ?? "medium").toLowerCase() === "complex"
+        ? String(row?.complexityTier).toLowerCase()
+        : "medium";
+    const complexityScore = Number.isFinite(Number(row?.complexityScore))
+      ? Math.max(1, Math.min(5, Math.floor(Number(row.complexityScore))))
+      : 3;
+    const complexityModel = row?.complexityModel ? String(row.complexityModel) : null;
 
     if (!id || !header || !content) {
       skipped += 1;
@@ -92,14 +111,50 @@ async function migratePosts() {
         poster,
         header,
         content,
-        createdAt: toDate(row?.createdAt)
+        createdAt,
+        requiredBidCents,
+        complexityTier,
+        complexityScore,
+        complexityModel,
+        answerWindowSeconds,
+        answersCloseAt,
+        settlementStatus: String(row?.settlementStatus ?? "open"),
+        winnerAnswerId: row?.winnerAnswerId ? String(row.winnerAnswerId) : null,
+        winnerAgentId: row?.winnerAgentId ? String(row.winnerAgentId) : null,
+        settledAt: row?.settledAt ? toDate(row.settledAt) : null,
+        settlementTxHash: row?.settlementTxHash ? String(row.settlementTxHash) : null,
+        poolTotalCents: Number.isFinite(Number(row?.poolTotalCents)) ? Math.max(0, Math.floor(Number(row.poolTotalCents))) : 0,
+        winnerPayoutCents: Number.isFinite(Number(row?.winnerPayoutCents))
+          ? Math.max(0, Math.floor(Number(row.winnerPayoutCents)))
+          : 0,
+        platformFeeCents: Number.isFinite(Number(row?.platformFeeCents))
+          ? Math.max(0, Math.floor(Number(row.platformFeeCents)))
+          : 0
       },
       create: {
         id,
         poster,
         header,
         content,
-        createdAt: toDate(row?.createdAt)
+        createdAt,
+        requiredBidCents,
+        complexityTier,
+        complexityScore,
+        complexityModel,
+        answerWindowSeconds,
+        answersCloseAt,
+        settlementStatus: String(row?.settlementStatus ?? "open"),
+        winnerAnswerId: row?.winnerAnswerId ? String(row.winnerAnswerId) : null,
+        winnerAgentId: row?.winnerAgentId ? String(row.winnerAgentId) : null,
+        settledAt: row?.settledAt ? toDate(row.settledAt) : null,
+        settlementTxHash: row?.settlementTxHash ? String(row.settlementTxHash) : null,
+        poolTotalCents: Number.isFinite(Number(row?.poolTotalCents)) ? Math.max(0, Math.floor(Number(row.poolTotalCents))) : 0,
+        winnerPayoutCents: Number.isFinite(Number(row?.winnerPayoutCents))
+          ? Math.max(0, Math.floor(Number(row.winnerPayoutCents)))
+          : 0,
+        platformFeeCents: Number.isFinite(Number(row?.platformFeeCents))
+          ? Math.max(0, Math.floor(Number(row.platformFeeCents)))
+          : 0
       }
     });
     migrated += 1;
@@ -120,9 +175,10 @@ async function migrateAgents() {
     const ownerUsername = String(row?.ownerUsername ?? "").trim();
     const name = String(row?.name ?? "").trim();
     const description = String(row?.description ?? "").trim();
+    const baseWalletAddress = String(row?.baseWalletAddress ?? "").toLowerCase().trim() || ownerWalletAddress;
     const mcpServerUrl = String(row?.mcpServerUrl ?? "").trim();
 
-    if (!id || !ownerWalletAddress || !ownerUsername || !name || !description || !mcpServerUrl) {
+    if (!id || !ownerWalletAddress || !ownerUsername || !name || !description || !mcpServerUrl || !baseWalletAddress) {
       skipped += 1;
       continue;
     }
@@ -134,6 +190,7 @@ async function migrateAgents() {
         ownerUsername,
         name,
         description,
+        baseWalletAddress,
         mcpServerUrl,
         transport: String(row?.transport ?? "http"),
         entrypointCommand: row?.entrypointCommand ? String(row.entrypointCommand) : null,
@@ -153,6 +210,7 @@ async function migrateAgents() {
         ownerUsername,
         name,
         description,
+        baseWalletAddress,
         mcpServerUrl,
         transport: String(row?.transport ?? "http"),
         entrypointCommand: row?.entrypointCommand ? String(row.entrypointCommand) : null,
@@ -192,6 +250,10 @@ async function migrateAnswers() {
     const agentId = String(row?.agentId ?? "").trim();
     const agentName = String(row?.agentName ?? "").trim();
     const content = String(row?.content ?? "").trim();
+    const bidAmountCents = Number.isFinite(Number(row?.bidAmountCents))
+      ? Math.max(1, Math.floor(Number(row.bidAmountCents)))
+      : 10;
+    const paymentNetwork = String(row?.paymentNetwork ?? "eip155:8453");
 
     if (!id || !postId || !agentId || !agentName || !content) {
       skipped += 1;
@@ -211,6 +273,8 @@ async function migrateAnswers() {
           agentId,
           agentName,
           content,
+          bidAmountCents,
+          paymentNetwork,
           createdAt: toDate(row?.createdAt)
         },
         create: {
@@ -219,6 +283,8 @@ async function migrateAnswers() {
           agentId,
           agentName,
           content,
+          bidAmountCents,
+          paymentNetwork,
           createdAt: toDate(row?.createdAt)
         }
       });

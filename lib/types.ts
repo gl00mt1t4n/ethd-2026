@@ -20,15 +20,56 @@ export type Post = {
   header: string;
   content: string;
   createdAt: string;
+  requiredBidCents: number;
+  complexityTier: "simple" | "medium" | "complex";
+  complexityScore: number;
+  complexityModel: string | null;
+  answerWindowSeconds: number;
+  answersCloseAt: string;
+  settlementStatus: "open" | "settled";
+  winnerAnswerId: string | null;
+  winnerAgentId: string | null;
+  settledAt: string | null;
+  settlementTxHash: string | null;
+  poolTotalCents: number;
+  winnerPayoutCents: number;
+  platformFeeCents: number;
 };
 
-export function createPost(input: { poster: string; header: string; content: string }): Post {
+export function createPost(input: {
+  poster: string;
+  header: string;
+  content: string;
+  requiredBidCents?: number;
+  complexityTier?: "simple" | "medium" | "complex";
+  complexityScore?: number;
+  complexityModel?: string | null;
+  answerWindowSeconds?: number;
+}): Post {
+  const now = new Date();
+  const answerWindowSeconds = Number.isFinite(input.answerWindowSeconds) ? Math.floor(input.answerWindowSeconds ?? 300) : 300;
+  const answersCloseAt = new Date(now.getTime() + answerWindowSeconds * 1000);
+
   return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
     poster: input.poster.trim() || "anonymous",
     header: input.header.trim(),
     content: input.content.trim(),
-    createdAt: new Date().toISOString()
+    createdAt: now.toISOString(),
+    requiredBidCents: Math.max(1, Math.floor(input.requiredBidCents ?? 75)),
+    complexityTier: input.complexityTier ?? "medium",
+    complexityScore: Math.min(5, Math.max(1, Math.floor(input.complexityScore ?? 3))),
+    complexityModel: input.complexityModel ?? null,
+    answerWindowSeconds,
+    answersCloseAt: answersCloseAt.toISOString(),
+    settlementStatus: "open",
+    winnerAnswerId: null,
+    winnerAgentId: null,
+    settledAt: null,
+    settlementTxHash: null,
+    poolTotalCents: 0,
+    winnerPayoutCents: 0,
+    platformFeeCents: 0
   };
 }
 
@@ -39,6 +80,8 @@ export type Answer = {
   agentId: string;
   agentName: string;
   content: string;
+  bidAmountCents: number;
+  paymentNetwork: string;
   createdAt: string;
 };
 
@@ -47,6 +90,8 @@ export function createAnswer(input: {
   agentId: string;
   agentName: string;
   content: string;
+  bidAmountCents: number;
+  paymentNetwork: string;
 }): Answer {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -54,6 +99,8 @@ export function createAnswer(input: {
     agentId: input.agentId,
     agentName: input.agentName,
     content: input.content.trim(),
+    bidAmountCents: input.bidAmountCents,
+    paymentNetwork: input.paymentNetwork,
     createdAt: new Date().toISOString()
   };
 }
@@ -68,6 +115,7 @@ export type Agent = {
   ownerUsername: string;
   name: string;
   description: string;
+  baseWalletAddress: string;
   mcpServerUrl: string;
   transport: AgentTransport;
   entrypointCommand: string | null;
@@ -87,6 +135,7 @@ export function createAgent(input: {
   ownerUsername: string;
   name: string;
   description: string;
+  baseWalletAddress: string;
   mcpServerUrl: string;
   transport: AgentTransport;
   entrypointCommand?: string;
@@ -105,6 +154,7 @@ export function createAgent(input: {
     ownerUsername: input.ownerUsername,
     name: input.name.trim(),
     description: input.description.trim(),
+    baseWalletAddress: input.baseWalletAddress.toLowerCase(),
     mcpServerUrl: input.mcpServerUrl.trim(),
     transport: input.transport,
     entrypointCommand: input.entrypointCommand?.trim() ? input.entrypointCommand.trim() : null,

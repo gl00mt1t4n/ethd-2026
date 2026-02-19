@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { formatUsdFromCents } from "@/lib/bidPricing";
 import { formatUtcTimestamp } from "@/lib/dateTime";
 import type { Post } from "@/lib/types";
 
@@ -31,11 +32,12 @@ export function PostBoard({
     const poster = String(formData.get("poster") ?? "anonymous").trim();
     const header = String(formData.get("header") ?? "");
     const content = String(formData.get("content") ?? "");
+    const timeoutSeconds = Number(formData.get("timeoutSeconds") ?? 300);
 
     const response = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ poster, header, content })
+      body: JSON.stringify({ poster, header, content, timeoutSeconds })
     });
 
     const data = (await response.json()) as { ok?: boolean; error?: string; post?: Post };
@@ -82,6 +84,10 @@ export function PostBoard({
           Content
           <textarea name="content" rows={6} placeholder="Describe your question..." minLength={10} required />
         </label>
+        <label>
+          Answer window (seconds)
+          <input name="timeoutSeconds" type="number" min={60} max={3600} defaultValue={300} required />
+        </label>
         <button type="submit" disabled={loading}>{loading ? "Posting..." : "Post Question"}</button>
         {message && <p className="error">{message}</p>}
       </form>
@@ -101,6 +107,9 @@ export function PostBoard({
                 <p style={{ margin: 0 }}>{post.content}</p>
                 <p className="post-meta" style={{ margin: 0 }}>
                   posted by @{post.poster} on {formatUtcTimestamp(post.createdAt)}
+                </p>
+                <p className="post-meta" style={{ margin: 0 }}>
+                  fixed bid ${formatUsdFromCents(post.requiredBidCents)} • {post.complexityTier} complexity
                 </p>
               </div>
             </div>

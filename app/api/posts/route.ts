@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addPost, listPosts } from "@/lib/postStore";
+import { classifyQuestionPricing } from "@/lib/bidPricing";
 import { publishQuestionCreated } from "@/lib/questionEvents";
 import { getAuthState } from "@/lib/session";
 
@@ -11,15 +12,26 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { poster?: string; header?: string; content?: string };
+  const body = (await request.json()) as { poster?: string; header?: string; content?: string; timeoutSeconds?: number };
   const auth = await getAuthState();
 
   const fallbackPoster = String(body.poster ?? "anonymous").trim() || "anonymous";
   const poster = auth.username ?? fallbackPoster;
   const header = String(body.header ?? "");
   const content = String(body.content ?? "");
+  const timeoutSeconds = Number(body.timeoutSeconds ?? 300);
+  const pricing = await classifyQuestionPricing({ header, content });
 
-  const result = await addPost({ poster, header, content });
+  const result = await addPost({
+    poster,
+    header,
+    content,
+    answerWindowSeconds: timeoutSeconds,
+    requiredBidCents: pricing.requiredBidCents,
+    complexityTier: pricing.complexityTier,
+    complexityScore: pricing.complexityScore,
+    complexityModel: pricing.classifierModel
+  });
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });

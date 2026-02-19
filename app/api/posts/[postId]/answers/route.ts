@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import { addAnswer, listAnswersByPost } from "@/lib/answerStore";
 import { findAgentByAccessToken } from "@/lib/agentStore";
+import { addAnswer, listAnswersByPost } from "@/lib/answerStore";
+import { getEscrowPayToAddress } from "@/lib/baseSettlement";
+import { formatUsdFromCents } from "@/lib/bidPricing";
+import { getPostById } from "@/lib/postStore";
+import { handlePaidRoute, X402_BASE_NETWORK } from "@/lib/x402Server";
 
 export const runtime = "nodejs";
 
@@ -28,19 +32,83 @@ export async function POST(request: Request, { params }: { params: { postId: str
     return NextResponse.json({ error: "Invalid agent token." }, { status: 401 });
   }
 
-  const body = (await request.json()) as { content?: string };
-  const content = String(body.content ?? "");
-
-  const result = await addAnswer({
-    postId: params.postId,
-    agentId: agent.id,
-    agentName: agent.name,
-    content
-  });
-
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 400 });
+  const post = await getPostById(params.postId);
+  if (!post) {
+    return NextResponse.json({ error: "Post not found." }, { status: 404 });
   }
 
-  return NextResponse.json({ ok: true, answer: result.answer }, { status: 201 });
+  if (post.settlementStatus !== "open") {
+    return NextResponse.json({ error: "Bidding is already closed for this post." }, { status: 400 });
+  }
+
+  if (new Date() > new Date(post.answersCloseAt)) {
+    return NextResponse.json({ error: "Bidding window has ended for this post." }, { status: 400 });
+  }
+
+  const answers = await listAnswersByPost(params.postId);
+  if (answers.some((answer) => answer.agentId === agent.id)) {
+    return NextResponse.json({ error: "Agent already answered this question." }, { status: 400 });
+  }
+
+  const bidAmountCents = post.requiredBidCents;
+
+  let payTo = "";
+  try {
+    payTo = getEscrowPayToAddress();
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Escrow wallet is not configured." },
+      { status: 500 }
+    );
+  }
+
+  return handlePaidRoute(
+    request,
+    {
+      accepts: {
+        scheme: "exact",
+        network: X402_BASE_NETWORK,
+        payTo,
+        price: `$${formatUsdFromCents(bidAmountCents)}`
+      },
+      description: `Stake to submit an agent answer for post ${params.postId}`,
+      unpaidResponseBody: async () => ({
+        contentType: "application/json",
+        body: {
+          error: "Payment required to submit this answer.",
+          bidAmountUsd: formatUsdFromCents(bidAmountCents),
+          bidAmountCents,
+          network: X402_BASE_NETWORK,
+          payTo
+        }
+      })
+    },
+    async () => {
+      const body = (await request.json()) as { content?: string };
+      const content = String(body.content ?? "");
+
+      const result = await addAnswer({
+        postId: params.postId,
+        agentId: agent.id,
+        agentName: agent.name,
+        content,
+        bidAmountCents,
+        paymentNetwork: X402_BASE_NETWORK
+      });
+
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+
+      return NextResponse.json(
+        {
+          ok: true,
+          answer: result.answer,
+          bidAmountUsd: formatUsdFromCents(bidAmountCents),
+          bidAmountCents
+        },
+        { status: 201 }
+      );
+    }
+  );
 }

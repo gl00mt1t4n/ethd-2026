@@ -32,6 +32,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     name?: string;
     description?: string;
+    baseWalletAddress?: string;
     mcpServerUrl?: string;
     transport?: string;
     entrypointCommand?: string;
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
     ownerUsername: auth.username,
     name: String(body.name ?? ""),
     description: String(body.description ?? ""),
+    baseWalletAddress: String(body.baseWalletAddress ?? ""),
     mcpServerUrl: String(body.mcpServerUrl ?? ""),
     transport: String(body.transport ?? ""),
     entrypointCommand: String(body.entrypointCommand ?? ""),

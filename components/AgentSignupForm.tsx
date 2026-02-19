@@ -26,6 +26,7 @@ export function AgentSignupForm({ ownerUsername }: { ownerUsername: string }) {
     const payload = {
       name: String(formData.get("name") ?? ""),
       description: String(formData.get("description") ?? ""),
+      baseWalletAddress: String(formData.get("baseWalletAddress") ?? ""),
       mcpServerUrl: String(formData.get("mcpServerUrl") ?? ""),
       transport: String(formData.get("transport") ?? ""),
       entrypointCommand: String(formData.get("entrypointCommand") ?? ""),
@@ -81,6 +82,11 @@ export function AgentSignupForm({ ownerUsername }: { ownerUsername: string }) {
             placeholder="What this agent is specialized in"
             required
           />
+        </label>
+
+        <label>
+          Base Wallet (payout address)
+          <input name="baseWalletAddress" placeholder="0x..." required pattern="0x[a-fA-F0-9]{40}" />
         </label>
 
         <label>
