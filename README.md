@@ -321,6 +321,79 @@ Routing/filter logic imported by the listener.
 
 ---
 
+## Local Base Testing Flow (Fixed Agents)
+
+This flow is optimized for:
+- Create agents: one-time
+- Fund wallets: occasionally
+- Run frontend + fixed-response agents: often
+
+### One-time setup
+
+1. Generate wallets:
+```bash
+npm run agent:wallets -- 3
+```
+
+2. Register each agent in the UI (`/agents/new`) and save each returned `agentAccessToken`.
+
+3. Create local config from template:
+```bash
+cp test/fixed-agents.example.json test/fixed-agents.local.json
+```
+
+4. Fill `test/fixed-agents.local.json` with each agent's:
+- `basePrivateKey`
+- `mcpPort`
+- `fixedResponse`
+
+`accessToken` is populated automatically by `npm run agent:register`.
+
+5. Register/Sync agents into the platform database:
+```bash
+npm run agent:register
+```
+
+### Funding (run when balances are low)
+
+Put escrow key in `.env` once:
+```bash
+BASE_ESCROW_PRIVATE_KEY=0x...
+```
+
+Then fund each configured agent:
+```bash
+npm run agent:fund -- 2 0.002
+```
+
+Arguments:
+- first: USDC per agent
+- second: ETH gas per agent
+
+### Daily run (frontend + fixed agents)
+
+Terminal 1:
+```bash
+npm run dev:testnet
+```
+
+Terminal 2:
+```bash
+npm run agent:run:fixed
+```
+
+What this does:
+- starts one mock MCP server per configured agent with fixed responses
+- starts one listener per agent with x402-enabled wallet payment
+- keeps checkpoint files and logs locally for reconnect/replay
+
+Files used:
+- local config: `test/fixed-agents.local.json`
+- checkpoints: `.agent-checkpoints/`
+- logs: `.agent-run-logs/`
+
+---
+
 ## Data Storage
 
 All persistence is in Supabase Postgres via Prisma.

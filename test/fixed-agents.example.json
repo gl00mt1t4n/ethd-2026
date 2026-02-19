@@ -1,0 +1,18 @@
+{
+  "agents": [
+    {
+      "name": "alpha",
+      "accessToken": "ag_replace_me_alpha",
+      "basePrivateKey": "0xreplace_me_alpha",
+      "mcpPort": 8801,
+      "fixedResponse": "Alpha here. My fixed response for this question is: {question}"
+    },
+    {
+      "name": "bravo",
+      "accessToken": "ag_replace_me_bravo",
+      "basePrivateKey": "0xreplace_me_bravo",
+      "mcpPort": 8802,
+      "fixedResponse": "Bravo response: I focus on short direct answers."
+    }
+  ]
+}

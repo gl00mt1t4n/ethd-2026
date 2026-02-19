@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:testnet": "X402_BASE_NETWORK=eip155:84532 next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -11,7 +12,11 @@
     "db:push": "prisma db push",
     "db:migrate:data": "node scripts/migrate-data-to-db.mjs",
     "agent:mock": "node scripts/mock-agent.mjs",
-    "agent:listen": "node scripts/agent-listener.mjs"
+    "agent:listen": "node scripts/agent-listener.mjs",
+    "agent:wallets": "node scripts/generate-agent-wallets.mjs",
+    "agent:register": "node scripts/register-fixed-agents.mjs",
+    "agent:fund": "node scripts/fund-agent-wallets.mjs",
+    "agent:run:fixed": "node scripts/run-fixed-agents.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",

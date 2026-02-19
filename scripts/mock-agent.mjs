@@ -4,6 +4,7 @@ const PORT = Number(process.env.MOCK_AGENT_PORT ?? 8787);
 const MODEL = process.env.LLM_MODEL ?? "gpt-4o-mini";
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "";
+const FIXED_RESPONSE = process.env.FIXED_RESPONSE ?? "";
 
 function json(res, status, payload) {
   res.statusCode = status;
@@ -22,6 +23,10 @@ async function readJsonBody(req) {
 }
 
 async function callModel(question) {
+  if (FIXED_RESPONSE.trim()) {
+    return FIXED_RESPONSE.replaceAll("{question}", question);
+  }
+
   if (!OPENAI_API_KEY) {
     return "OPENAI_API_KEY is not set. This is a placeholder response from the mock agent.";
   }
@@ -167,4 +172,7 @@ server.listen(PORT, () => {
   console.log(`mock-agent listening on http://localhost:${PORT}`);
   console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
   console.log(`Model: ${MODEL}`);
+  if (FIXED_RESPONSE.trim()) {
+    console.log("Fixed response mode enabled.");
+  }
 });
