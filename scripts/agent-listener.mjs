@@ -1,6 +1,21 @@
-const AGENT_MCP_URL = process.env.AGENT_MCP_URL ?? "http://localhost:8787/mcp";
-const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:3000";
-const AGENT_ACCESS_TOKEN = process.env.AGENT_ACCESS_TOKEN ?? "";
+import http from "node:http";
+import { buildQuestionPrompt, shouldRespond } from "./agent-policy.mjs";
+
+const AGENT_MCP_PORT = Number(process.env.AGENT_MCP_PORT ?? 8787);
+const AGENT_MCP_URL = process.env.AGENT_MCP_URL ?? `http://localhost:${AGENT_MCP_PORT}/mcp`;
+const APP_PORT = Number(process.env.APP_PORT ?? 3000);
+const APP_BASE_URL = process.env.APP_BASE_URL ?? `http://localhost:${APP_PORT}`;
+const LISTENER_STATUS_PORT = Number(process.env.LISTENER_STATUS_PORT ?? 0);
+const AGENT_ACCESS_TOKEN = (process.env.AGENT_ACCESS_TOKEN ?? "").trim();
+const ENABLE_STARTUP_BACKFILL = (process.env.ENABLE_STARTUP_BACKFILL ?? "1") !== "0";
+
+const state = {
+  connected: false,
+  processedEvents: 0,
+  submittedAnswers: 0,
+  lastError: "",
+  lastEventAt: ""
+};
 
 if (!AGENT_ACCESS_TOKEN) {
   console.error("Missing AGENT_ACCESS_TOKEN.");
@@ -32,7 +47,107 @@ async function callAgent(question) {
   return typeof answer === "string" ? answer : "No answer returned by agent";
 }
 
+async function submitAnswer(postId, answerText) {
+  const response = await fetch(`${APP_BASE_URL}/api/posts/${postId}/answers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${AGENT_ACCESS_TOKEN}`
+    },
+    body: JSON.stringify({ content: answerText })
+  });
+
+  if (response.ok) {
+    return { ok: true };
+  }
+
+  const maybeJson = await response.json().catch(() => null);
+  const errorMessage = maybeJson?.error ?? `HTTP ${response.status}`;
+
+  if (response.status === 400 && String(errorMessage).toLowerCase().includes("already answered")) {
+    return { ok: true, skipped: true };
+  }
+
+  return { ok: false, error: `Failed to submit answer (${response.status}): ${errorMessage}` };
+}
+
+async function handleQuestionEvent(payload) {
+  if (!shouldRespond(payload)) {
+    return;
+  }
+
+  const questionText = buildQuestionPrompt(payload);
+  const answer = await callAgent(questionText);
+  const submitResult = await submitAnswer(payload.postId, answer);
+
+  if (!submitResult.ok) {
+    throw new Error(submitResult.error);
+  }
+
+  if (submitResult.skipped) {
+    console.log(`Skipped post ${payload.postId} (already answered).`);
+    return;
+  }
+
+  state.submittedAnswers += 1;
+  console.log(`Posted answer for post ${payload.postId}`);
+}
+
+async function runStartupBackfill() {
+  if (!ENABLE_STARTUP_BACKFILL) {
+    return;
+  }
+
+  const response = await fetch(`${APP_BASE_URL}/api/posts`);
+  if (!response.ok) {
+    console.warn(`Backfill skipped: could not fetch posts (${response.status}).`);
+    return;
+  }
+
+  const data = await response.json().catch(() => ({ posts: [] }));
+  const posts = Array.isArray(data?.posts) ? data.posts : [];
+
+  const oldestFirst = [...posts].reverse();
+
+  for (const post of oldestFirst) {
+    const syntheticEvent = {
+      type: "question.created",
+      postId: post.id,
+      header: post.header,
+      content: post.content,
+      poster: post.poster,
+      createdAt: post.createdAt
+    };
+
+    try {
+      await handleQuestionEvent(syntheticEvent);
+    } catch (error) {
+      console.warn(`Backfill failed for post ${post.id}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+}
+
 async function run() {
+  if (LISTENER_STATUS_PORT > 0) {
+    const statusServer = http.createServer((req, res) => {
+      if (req.url !== "/health") {
+        res.statusCode = 404;
+        res.end("not found");
+        return;
+      }
+
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify(state));
+    });
+
+    statusServer.listen(LISTENER_STATUS_PORT, () => {
+      console.log(`Listener status server on http://localhost:${LISTENER_STATUS_PORT}/health`);
+    });
+  }
+
+  await runStartupBackfill();
+
   const url = `${APP_BASE_URL}/api/events/questions`;
   const response = await fetch(url, {
     method: "GET",
@@ -48,6 +163,7 @@ async function run() {
   }
 
   console.log(`Connected to ${url}`);
+  state.connected = true;
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -80,12 +196,15 @@ async function run() {
         }
 
         if (payload.type === "question.created") {
-          console.log(`New question: ${payload.header}`);
-          const questionText = `${payload.header}\n\n${payload.content}`;
-          const answer = await callAgent(questionText);
-          console.log("Generated answer preview:");
-          console.log(answer.slice(0, 300));
-          console.log("---");
+          try {
+            console.log(`New question: ${payload.header}`);
+            state.processedEvents += 1;
+            state.lastEventAt = new Date().toISOString();
+            await handleQuestionEvent(payload);
+          } catch (error) {
+            state.lastError = error instanceof Error ? error.message : String(error);
+            console.warn(`Failed processing question ${payload.postId}: ${error instanceof Error ? error.message : String(error)}`);
+          }
         }
       }
     }

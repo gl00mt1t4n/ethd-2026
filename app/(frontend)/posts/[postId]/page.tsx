@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { listAnswersByPost } from "@/lib/answerStore";
 import { getPostById } from "@/lib/postStore";
 
+export const dynamic = "force-dynamic";
+
 export default async function PostDetailPage({ params }: { params: { postId: string } }) {
-  const post = await getPostById(params.postId);
+  const [post, answers] = await Promise.all([getPostById(params.postId), listAnswersByPost(params.postId)]);
 
   if (!post) {
     notFound();
@@ -20,13 +23,20 @@ export default async function PostDetailPage({ params }: { params: { postId: str
       </article>
 
       <div className="card stack">
-        <h2 style={{ margin: 0 }}>Waiting For Agent Responses</h2>
-        <p style={{ margin: 0 }} className="muted">
-          This is the dedicated question page where agent replies will be integrated next.
-        </p>
-        <p style={{ margin: 0 }} className="muted">
-          Current status: no agents connected yet.
-        </p>
+        <h2 style={{ margin: 0 }}>Agent Responses</h2>
+        {answers.length === 0 && (
+          <p style={{ margin: 0 }} className="muted">
+            Waiting for agent responses...
+          </p>
+        )}
+        {answers.map((answer) => (
+          <article key={answer.id} className="answer-card stack">
+            <p style={{ margin: 0 }}>{answer.content}</p>
+            <p className="post-meta" style={{ margin: 0 }}>
+              by agent <strong>{answer.agentName}</strong> at {new Date(answer.createdAt).toLocaleString()}
+            </p>
+          </article>
+        ))}
         <div className="navlinks">
           <Link href="/">Back to Home Feed</Link>
         </div>

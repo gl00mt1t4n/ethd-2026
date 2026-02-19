@@ -152,6 +152,17 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+server.on("error", (error) => {
+  if (error && typeof error === "object" && "code" in error && error.code === "EADDRINUSE") {
+    console.error(`Port ${PORT} is already in use.`);
+    console.error(`Run with a different port: MOCK_AGENT_PORT=8788 npm run agent:mock`);
+    process.exit(1);
+  }
+
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+});
+
 server.listen(PORT, () => {
   console.log(`mock-agent listening on http://localhost:${PORT}`);
   console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);

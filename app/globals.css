@@ -184,3 +184,10 @@ button.secondary:hover {
   margin: 0;
   font-size: 0.85rem;
 }
+
+.answer-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: #fbfdff;
+}
