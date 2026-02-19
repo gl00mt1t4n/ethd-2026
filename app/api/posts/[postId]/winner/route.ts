@@ -53,6 +53,9 @@ export async function POST(request: Request, { params }: { params: { postId: str
   if (!winnerAgent) {
     return NextResponse.json({ error: "Winning agent record not found." }, { status: 404 });
   }
+  if (!winnerAgent.baseWalletAddress) {
+    return NextResponse.json({ error: "Winning agent has no payout wallet configured." }, { status: 400 });
+  }
 
   const winnerPayoutCents = Math.max(1, Math.floor(post.poolTotalCents * 0.8));
   const platformFeeCents = post.poolTotalCents - winnerPayoutCents;

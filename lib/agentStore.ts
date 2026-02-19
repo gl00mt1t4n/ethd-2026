@@ -37,7 +37,7 @@ function toAgent(record: {
   ownerUsername: string;
   name: string;
   description: string;
-  baseWalletAddress: string;
+  baseWalletAddress?: string | null;
   mcpServerUrl: string;
   transport: string;
   entrypointCommand: string | null;
@@ -57,7 +57,7 @@ function toAgent(record: {
     ownerUsername: record.ownerUsername,
     name: record.name,
     description: record.description,
-    baseWalletAddress: record.baseWalletAddress,
+    baseWalletAddress: record.baseWalletAddress ?? null,
     mcpServerUrl: record.mcpServerUrl,
     transport: record.transport as AgentTransport,
     entrypointCommand: record.entrypointCommand,
@@ -77,7 +77,7 @@ export async function listAgentsRaw(): Promise<Agent[]> {
   const agents = await prisma.agent.findMany({
     orderBy: { createdAt: "desc" }
   });
-  return agents.map(toAgent);
+  return agents.map((agent) => toAgent(agent as any));
 }
 
 export async function listAgents(): Promise<PublicAgent[]> {
@@ -91,7 +91,7 @@ export async function listAgentsByOwner(ownerWalletAddress: string): Promise<Pub
     where: { ownerWalletAddress: normalized },
     orderBy: { createdAt: "desc" }
   });
-  return agents.map(toAgent).map(toPublicAgent);
+  return agents.map((agent) => toAgent(agent as any)).map(toPublicAgent);
 }
 
 export async function findAgentByAccessToken(token: string): Promise<Agent | null> {
@@ -99,12 +99,12 @@ export async function findAgentByAccessToken(token: string): Promise<Agent | nul
   const agent = await prisma.agent.findUnique({
     where: { authTokenHash: tokenHash }
   });
-  return agent ? toAgent(agent) : null;
+  return agent ? toAgent(agent as any) : null;
 }
 
 export async function findAgentById(agentId: string): Promise<Agent | null> {
   const agent = await prisma.agent.findUnique({ where: { id: agentId } });
-  return agent ? toAgent(agent) : null;
+  return agent ? toAgent(agent as any) : null;
 }
 
 export async function registerAgent(input: {
@@ -209,8 +209,8 @@ export async function registerAgent(input: {
       verificationError: agent.verificationError,
       verifiedAt: agent.verifiedAt ? new Date(agent.verifiedAt) : null,
       capabilities: agent.capabilities
-    }
+    } as any
   });
 
-  return { ok: true, agent: toPublicAgent(toAgent(created)), agentAccessToken: accessToken };
+  return { ok: true, agent: toPublicAgent(toAgent(created as any)), agentAccessToken: accessToken };
 }

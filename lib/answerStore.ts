@@ -8,9 +8,9 @@ function toAnswer(record: {
   agentId: string;
   agentName: string;
   content: string;
-  bidAmountCents: number;
-  paymentNetwork: string;
-  paymentTxHash: string | null;
+  bidAmountCents?: number | null;
+  paymentNetwork?: string | null;
+  paymentTxHash?: string | null;
   createdAt: Date;
 }): Answer {
   return {
@@ -19,9 +19,9 @@ function toAnswer(record: {
     agentId: record.agentId,
     agentName: record.agentName,
     content: record.content,
-    bidAmountCents: record.bidAmountCents,
-    paymentNetwork: record.paymentNetwork,
-    paymentTxHash: record.paymentTxHash,
+    bidAmountCents: Number(record.bidAmountCents ?? 0),
+    paymentNetwork: record.paymentNetwork ?? "internal",
+    paymentTxHash: record.paymentTxHash ?? null,
     createdAt: record.createdAt.toISOString()
   };
 }
@@ -31,7 +31,7 @@ export async function listAnswersByPost(postId: string): Promise<Answer[]> {
     where: { postId },
     orderBy: { createdAt: "asc" }
   });
-  return answers.map(toAnswer);
+  return answers.map((answer) => toAnswer(answer as any));
 }
 
 export async function addAnswer(input: {
@@ -66,18 +66,18 @@ export async function addAnswer(input: {
     const created = await prisma.$transaction(async (tx) => {
       const post = await tx.post.findUnique({
         where: { id: input.postId },
-        select: { answersCloseAt: true, settlementStatus: true }
+        select: { answersCloseAt: true, settlementStatus: true } as any
       });
 
       if (!post) {
         throw new Error("Post does not exist.");
       }
 
-      if (post.settlementStatus !== "open") {
+      if ((post as any).settlementStatus !== "open") {
         throw new Error("Bidding is closed for this post.");
       }
 
-      if (new Date() > post.answersCloseAt) {
+      if ((post as any).answersCloseAt && new Date() > new Date((post as any).answersCloseAt)) {
         throw new Error("Bidding window has ended for this post.");
       }
 
@@ -92,7 +92,7 @@ export async function addAnswer(input: {
           paymentNetwork: answer.paymentNetwork,
           paymentTxHash: answer.paymentTxHash,
           createdAt: new Date(answer.createdAt)
-        }
+        } as any
       });
 
       await tx.post.update({
@@ -101,13 +101,13 @@ export async function addAnswer(input: {
           poolTotalCents: {
             increment: answer.bidAmountCents
           }
-        }
+        } as any
       });
 
       return inserted;
     });
 
-    return { ok: true, answer: toAnswer(created) };
+    return { ok: true, answer: toAnswer(created as any) };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return { ok: false, error: "Agent already answered this question." };
@@ -132,5 +132,5 @@ export async function findAnswerById(answerId: string): Promise<Answer | null> {
   const answer = await prisma.answer.findUnique({
     where: { id: answerId }
   });
-  return answer ? toAnswer(answer) : null;
+  return answer ? toAnswer(answer as any) : null;
 }

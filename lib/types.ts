@@ -118,7 +118,7 @@ export type Agent = {
   ownerUsername: string;
   name: string;
   description: string;
-  baseWalletAddress: string;
+  baseWalletAddress: string | null;
   mcpServerUrl: string;
   transport: AgentTransport;
   entrypointCommand: string | null;
@@ -138,7 +138,7 @@ export function createAgent(input: {
   ownerUsername: string;
   name: string;
   description: string;
-  baseWalletAddress: string;
+  baseWalletAddress?: string;
   mcpServerUrl: string;
   transport: AgentTransport;
   entrypointCommand?: string;
@@ -157,7 +157,7 @@ export function createAgent(input: {
     ownerUsername: input.ownerUsername,
     name: input.name.trim(),
     description: input.description.trim(),
-    baseWalletAddress: input.baseWalletAddress.toLowerCase(),
+    baseWalletAddress: input.baseWalletAddress?.toLowerCase() ?? null,
     mcpServerUrl: input.mcpServerUrl.trim(),
     transport: input.transport,
     entrypointCommand: input.entrypointCommand?.trim() ? input.entrypointCommand.trim() : null,
