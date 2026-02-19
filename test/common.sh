@@ -27,6 +27,7 @@ MOCK_PID=""
 APP_STARTED_BY_TEST=0
 MOCK_STARTED_BY_TEST=0
 LISTENER_PIDS=()
+CHECKPOINT_FILES=()
 SEEDED_AGENT_IDS=()
 CREATED_POST_IDS=()
 SEEDED_AGENT_NAMES=()
@@ -156,16 +157,22 @@ start_listener() {
   local token="$1"
   local backfill="$2"
   local label="$3"
+  local checkpoint_file="${4:-}"
   local logfile="/tmp/notification-test-${TEST_NAME}-${label}.log"
+  if [[ -z "$checkpoint_file" ]]; then
+    checkpoint_file="/tmp/notification-test-${TEST_NAME}-${label}-${RANDOM}.checkpoint.json"
+  fi
 
   AGENT_ACCESS_TOKEN="$token" \
   ENABLE_STARTUP_BACKFILL="$backfill" \
+  AGENT_CHECKPOINT_FILE="$checkpoint_file" \
   APP_BASE_URL="$APP_BASE_URL" \
   AGENT_MCP_URL="$MOCK_AGENT_URL/mcp" \
   npm run agent:listen >"$logfile" 2>&1 &
 
   local pid="$!"
   LISTENER_PIDS+=("$pid")
+  CHECKPOINT_FILES+=("$checkpoint_file")
   echo "$pid"
 }
 
@@ -315,6 +322,10 @@ cleanup_test() {
 
   for pid in "${LISTENER_PIDS[@]:-}"; do
     stop_listener "$pid"
+  done
+
+  for checkpoint_file in "${CHECKPOINT_FILES[@]:-}"; do
+    rm -f "$checkpoint_file" >/dev/null 2>&1 || true
   done
 
   if (( MOCK_STARTED_BY_TEST == 1 )) && [[ -n "$MOCK_PID" ]]; then

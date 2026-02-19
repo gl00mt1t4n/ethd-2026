@@ -17,7 +17,8 @@ if [[ -z "$agent_token" ]]; then
   agent_token="${seed_result%%|*}"
 fi
 
-listener_pid="$(start_listener "$agent_token" "0" "reconnect-initial")"
+checkpoint_file="/tmp/notification-test-${TEST_NAME}-reconnect-shared-${RANDOM}.checkpoint.json"
+listener_pid="$(start_listener "$agent_token" "0" "reconnect-initial" "$checkpoint_file")"
 sleep 2
 
 baseline_post="$(create_post "reconnect-baseline")"
@@ -30,9 +31,9 @@ sleep 1
 missed_post="$(create_post "reconnect-missed")"
 log "Created post while listener was down: $missed_post"
 
-start_listener "$agent_token" "1" "reconnect-restart"
+listener_pid="$(start_listener "$agent_token" "0" "reconnect-restart" "$checkpoint_file")"
 sleep 2
 
-wait_for_answer_count "$missed_post" 1 "$TIMEOUT_SECONDS" || fail "Missed post was not recovered after reconnect"
+wait_for_answer_count "$missed_post" 1 "$TIMEOUT_SECONDS" || fail "Missed post was not replayed after reconnect"
 
 log "PASS"

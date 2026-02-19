@@ -1,4 +1,6 @@
 import http from "node:http";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import { buildQuestionPrompt, shouldRespond } from "./agent-policy.mjs";
 
 const AGENT_MCP_PORT = Number(process.env.AGENT_MCP_PORT ?? 8787);
@@ -7,14 +9,19 @@ const APP_PORT = Number(process.env.APP_PORT ?? 3000);
 const APP_BASE_URL = process.env.APP_BASE_URL ?? `http://localhost:${APP_PORT}`;
 const LISTENER_STATUS_PORT = Number(process.env.LISTENER_STATUS_PORT ?? 0);
 const AGENT_ACCESS_TOKEN = (process.env.AGENT_ACCESS_TOKEN ?? "").trim();
-const ENABLE_STARTUP_BACKFILL = (process.env.ENABLE_STARTUP_BACKFILL ?? "1") !== "0";
+const ENABLE_STARTUP_BACKFILL = (process.env.ENABLE_STARTUP_BACKFILL ?? "0") !== "0";
+const AGENT_CHECKPOINT_FILE =
+  process.env.AGENT_CHECKPOINT_FILE ?? path.join(process.cwd(), ".agent-listener-checkpoint.json");
+const RECONNECT_BASE_DELAY_MS = Number(process.env.RECONNECT_BASE_DELAY_MS ?? 1000);
+const RECONNECT_MAX_DELAY_MS = Number(process.env.RECONNECT_MAX_DELAY_MS ?? 10000);
 
 const state = {
   connected: false,
   processedEvents: 0,
   submittedAnswers: 0,
   lastError: "",
-  lastEventAt: ""
+  lastEventAt: "",
+  lastEventId: ""
 };
 
 if (!AGENT_ACCESS_TOKEN) {
@@ -87,6 +94,27 @@ async function fetchPostById(postId) {
   return post;
 }
 
+async function loadCheckpoint() {
+  try {
+    const raw = await fs.readFile(AGENT_CHECKPOINT_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    const lastEventId = String(parsed?.lastEventId ?? "").trim();
+    return lastEventId || null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveCheckpoint(eventId) {
+  const payload = JSON.stringify({ lastEventId: eventId, updatedAt: new Date().toISOString() });
+  await fs.writeFile(AGENT_CHECKPOINT_FILE, payload, "utf8");
+  state.lastEventId = eventId;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function handleQuestionEvent(payload) {
   if (!shouldRespond(payload)) {
     return;
@@ -133,6 +161,7 @@ async function runStartupBackfill() {
   for (const post of oldestFirst) {
     const syntheticEvent = {
       eventType: "question.created",
+      eventId: post.id,
       postId: post.id,
       header: post.header,
       tags: [],
@@ -147,28 +176,14 @@ async function runStartupBackfill() {
   }
 }
 
-async function run() {
-  if (LISTENER_STATUS_PORT > 0) {
-    const statusServer = http.createServer((req, res) => {
-      if (req.url !== "/health") {
-        res.statusCode = 404;
-        res.end("not found");
-        return;
-      }
+async function consumeEventStream(initialAfterEventId) {
+  let afterEventId = initialAfterEventId;
 
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify(state));
-    });
-
-    statusServer.listen(LISTENER_STATUS_PORT, () => {
-      console.log(`Listener status server on http://localhost:${LISTENER_STATUS_PORT}/health`);
-    });
+  const url = new URL(`${APP_BASE_URL}/api/events/questions`);
+  if (afterEventId) {
+    url.searchParams.set("afterEventId", afterEventId);
   }
 
-  await runStartupBackfill();
-
-  const url = `${APP_BASE_URL}/api/events/questions`;
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -182,7 +197,7 @@ async function run() {
     throw new Error(`Event stream failed (${response.status}): ${text.slice(0, 300)}`);
   }
 
-  console.log(`Connected to ${url}`);
+  console.log(`Connected to ${url.toString()}`);
   state.connected = true;
 
   const reader = response.body.getReader();
@@ -211,7 +226,9 @@ async function run() {
         const payload = JSON.parse(line.slice(6));
 
         if (payload.eventType === "session.ready") {
-          console.log(`Session ready for agent ${payload.agentName}`);
+          console.log(
+            `Session ready for agent ${payload.agentName} (resumeFromEventId=${payload.resumeFromEventId ?? "none"}, replayCount=${payload.replayCount ?? 0})`
+          );
           continue;
         }
 
@@ -220,6 +237,11 @@ async function run() {
             state.processedEvents += 1;
             state.lastEventAt = new Date().toISOString();
             await handleQuestionEvent(payload);
+            const checkpointId = String(payload.eventId ?? payload.postId ?? "").trim();
+            if (checkpointId) {
+              await saveCheckpoint(checkpointId);
+              afterEventId = checkpointId;
+            }
           } catch (error) {
             state.lastError = error instanceof Error ? error.message : String(error);
             console.warn(
@@ -228,6 +250,57 @@ async function run() {
           }
         }
       }
+    }
+  }
+
+  throw new Error("Event stream closed.");
+}
+
+async function run() {
+  if (LISTENER_STATUS_PORT > 0) {
+    const statusServer = http.createServer((req, res) => {
+      if (req.url !== "/health") {
+        res.statusCode = 404;
+        res.end("not found");
+        return;
+      }
+
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify(state));
+    });
+
+    statusServer.listen(LISTENER_STATUS_PORT, () => {
+      console.log(`Listener status server on http://localhost:${LISTENER_STATUS_PORT}/health`);
+    });
+  }
+
+  if (ENABLE_STARTUP_BACKFILL) {
+    await runStartupBackfill();
+  }
+
+  let reconnectAttempts = 0;
+  let checkpoint = await loadCheckpoint();
+  if (checkpoint) {
+    state.lastEventId = checkpoint;
+    console.log(`Loaded checkpoint eventId=${checkpoint} from ${AGENT_CHECKPOINT_FILE}`);
+  }
+
+  while (true) {
+    try {
+      await consumeEventStream(checkpoint);
+      reconnectAttempts = 0;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      state.connected = false;
+      state.lastError = message;
+      reconnectAttempts += 1;
+
+      const delay = Math.min(RECONNECT_BASE_DELAY_MS * Math.max(1, reconnectAttempts), RECONNECT_MAX_DELAY_MS);
+      console.warn(`SSE connection error: ${message}. Reconnecting in ${delay}ms...`);
+
+      checkpoint = (await loadCheckpoint()) ?? checkpoint;
+      await sleep(delay);
     }
   }
 }
