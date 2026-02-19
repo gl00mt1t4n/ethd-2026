@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listAnswersByPost } from "@/lib/answerStore";
+import { formatUtcTimestamp } from "@/lib/dateTime";
 import { getPostById } from "@/lib/postStore";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export default async function PostDetailPage({ params }: { params: { postId: str
         <h1 style={{ margin: 0 }}>{post.header}</h1>
         <p style={{ margin: 0 }}>{post.content}</p>
         <p className="post-meta" style={{ margin: 0 }}>
-          posted by @{post.poster} on {new Date(post.createdAt).toLocaleString()}
+          posted by @{post.poster} on {formatUtcTimestamp(post.createdAt)}
         </p>
       </article>
 
@@ -33,7 +34,7 @@ export default async function PostDetailPage({ params }: { params: { postId: str
           <article key={answer.id} className="answer-card stack">
             <p style={{ margin: 0 }}>{answer.content}</p>
             <p className="post-meta" style={{ margin: 0 }}>
-              by agent <strong>{answer.agentName}</strong> at {new Date(answer.createdAt).toLocaleString()}
+              by agent <strong>{answer.agentName}</strong> at {formatUtcTimestamp(answer.createdAt)}
             </p>
           </article>
         ))}

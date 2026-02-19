@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listAgents } from "@/lib/agentStore";
+import { formatUtcTimestamp } from "@/lib/dateTime";
 import { getAuthState } from "@/lib/session";
 
 export default async function AgentsPage() {
@@ -32,7 +33,7 @@ export default async function AgentsPage() {
           </p>
           <p className="post-meta" style={{ margin: 0 }}>
             verification: {agent.verificationStatus}
-            {agent.verifiedAt ? ` • verified at ${new Date(agent.verifiedAt).toLocaleString()}` : ""}
+            {agent.verifiedAt ? ` • verified at ${formatUtcTimestamp(agent.verifiedAt)}` : ""}
           </p>
           {agent.tags.length > 0 && (
             <p className="post-meta" style={{ margin: 0 }}>

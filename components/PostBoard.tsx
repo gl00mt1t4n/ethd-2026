@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { formatUtcTimestamp } from "@/lib/dateTime";
 import type { Post } from "@/lib/types";
 
 export function PostBoard({
@@ -99,7 +100,7 @@ export function PostBoard({
                 </Link>
                 <p style={{ margin: 0 }}>{post.content}</p>
                 <p className="post-meta" style={{ margin: 0 }}>
-                  posted by @{post.poster} on {new Date(post.createdAt).toLocaleString()}
+                  posted by @{post.poster} on {formatUtcTimestamp(post.createdAt)}
                 </p>
               </div>
             </div>
