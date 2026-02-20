@@ -10,41 +10,52 @@ function toPost(record: {
   header: string;
   content: string;
   createdAt: Date;
-  requiredBidCents: number;
-  complexityTier: string;
-  complexityScore: number;
-  complexityModel: string | null;
-  answerWindowSeconds: number;
-  answersCloseAt: Date;
-  settlementStatus: string;
-  winnerAnswerId: string | null;
-  winnerAgentId: string | null;
-  settledAt: Date | null;
-  settlementTxHash: string | null;
-  poolTotalCents: number;
-  winnerPayoutCents: number;
-  platformFeeCents: number;
+  requiredBidCents?: number | null;
+  complexityTier?: string | null;
+  complexityScore?: number | null;
+  complexityModel?: string | null;
+  answerWindowSeconds?: number | null;
+  answersCloseAt?: Date | null;
+  settlementStatus?: string | null;
+  winnerAnswerId?: string | null;
+  winnerAgentId?: string | null;
+  settledAt?: Date | null;
+  settlementTxHash?: string | null;
+  poolTotalCents?: number | null;
+  winnerPayoutCents?: number | null;
+  platformFeeCents?: number | null;
 }): Post {
+  const answerWindowSeconds =
+    Number.isFinite(Number(record.answerWindowSeconds)) && Number(record.answerWindowSeconds) > 0
+      ? Number(record.answerWindowSeconds)
+      : 300;
+  const answersCloseAt = record.answersCloseAt
+    ? record.answersCloseAt
+    : new Date(record.createdAt.getTime() + answerWindowSeconds * 1000);
+
   return {
     id: record.id,
     poster: record.poster,
     header: record.header,
     content: record.content,
     createdAt: record.createdAt.toISOString(),
-    requiredBidCents: record.requiredBidCents,
-    complexityTier: (record.complexityTier === "simple" || record.complexityTier === "complex" ? record.complexityTier : "medium"),
-    complexityScore: record.complexityScore,
-    complexityModel: record.complexityModel,
-    answerWindowSeconds: record.answerWindowSeconds,
-    answersCloseAt: record.answersCloseAt.toISOString(),
+    requiredBidCents: Number(record.requiredBidCents ?? 75),
+    complexityTier:
+      record.complexityTier === "simple" || record.complexityTier === "complex"
+        ? record.complexityTier
+        : "medium",
+    complexityScore: Number(record.complexityScore ?? 3),
+    complexityModel: record.complexityModel ?? null,
+    answerWindowSeconds,
+    answersCloseAt: answersCloseAt.toISOString(),
     settlementStatus: record.settlementStatus === "settled" ? "settled" : "open",
-    winnerAnswerId: record.winnerAnswerId,
-    winnerAgentId: record.winnerAgentId,
+    winnerAnswerId: record.winnerAnswerId ?? null,
+    winnerAgentId: record.winnerAgentId ?? null,
     settledAt: record.settledAt?.toISOString() ?? null,
-    settlementTxHash: record.settlementTxHash,
-    poolTotalCents: record.poolTotalCents,
-    winnerPayoutCents: record.winnerPayoutCents,
-    platformFeeCents: record.platformFeeCents
+    settlementTxHash: record.settlementTxHash ?? null,
+    poolTotalCents: Number(record.poolTotalCents ?? 0),
+    winnerPayoutCents: Number(record.winnerPayoutCents ?? 0),
+    platformFeeCents: Number(record.platformFeeCents ?? 0)
   };
 }
 
@@ -52,7 +63,7 @@ export async function listPosts(): Promise<Post[]> {
   const posts = await prisma.post.findMany({
     orderBy: { createdAt: "desc" }
   });
-  return posts.map(toPost);
+  return posts.map((post) => toPost(post as any));
 }
 
 export async function getLatestPostAnchor(): Promise<{ id: string; createdAt: string } | null> {
@@ -88,14 +99,14 @@ export async function listPostsAfterAnchor(
     take: limit
   });
 
-  return posts.map(toPost);
+  return posts.map((post) => toPost(post as any));
 }
 
 export async function getPostById(postId: string): Promise<Post | null> {
   const post = await prisma.post.findUnique({
     where: { id: postId }
   });
-  return post ? toPost(post) : null;
+  return post ? toPost(post as any) : null;
 }
 
 export async function addPost(input: {
@@ -158,9 +169,9 @@ export async function addPost(input: {
       poolTotalCents: 0,
       winnerPayoutCents: 0,
       platformFeeCents: 0
-    }
+    } as any
   });
-  return { ok: true, post: toPost(created) };
+  return { ok: true, post: toPost(created as any) };
 }
 
 export async function settlePost(input: {
@@ -181,7 +192,7 @@ export async function settlePost(input: {
       settlementTxHash: input.settlementTxHash,
       winnerPayoutCents: input.winnerPayoutCents,
       platformFeeCents: input.platformFeeCents
-    }
+    } as any
   });
-  return settled ? toPost(settled) : null;
+  return settled ? toPost(settled as any) : null;
 }
