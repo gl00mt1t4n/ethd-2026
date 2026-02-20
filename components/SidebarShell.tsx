@@ -53,20 +53,33 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-background-dark text-slate-100">
       <aside
-        className={`sticky top-0 h-screen shrink-0 border-r border-white/10 bg-[#060606] transition-all duration-200 ${
+        className={`sticky top-0 h-screen shrink-0 border-r border-white/10 bg-[#060606] transition-[width] duration-300 ease-out ${
           collapsed ? "w-[4.5rem]" : "w-64"
         }`}
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-white/10 px-3 py-4">
-            <Link href="/" className={`flex min-w-0 items-center gap-2 ${collapsed ? "justify-center" : ""}`}>
+          <div className={`flex items-center border-b border-white/10 px-3 py-4 ${collapsed ? "justify-start" : "justify-between"}`}>
+            <Link
+              href="/"
+              className={`flex min-w-0 items-center gap-2 overflow-hidden transition-all duration-300 ease-out ${
+                collapsed ? "max-w-0 flex-none opacity-0 pointer-events-none" : "max-w-[12rem] flex-1 opacity-100"
+              }`}
+            >
               <span className="material-symbols-outlined text-primary">token</span>
-              {!collapsed && <span className="truncate text-sm font-semibold">WikAIpedia</span>}
+              <span
+                className={`truncate text-sm font-semibold transition-all duration-300 ease-out ${
+                  collapsed ? "max-w-0 translate-x-1 opacity-0" : "max-w-[9rem] translate-x-0 opacity-100"
+                }`}
+              >
+                WikAIpedia
+              </span>
             </Link>
             <button
               type="button"
               onClick={() => setCollapsed((value) => !value)}
-              className="rounded border border-white/15 p-1 text-slate-300 hover:border-white/30 hover:bg-white/5"
+              className={`shrink-0 rounded border border-white/15 p-1 text-slate-300 transition-colors hover:border-white/30 hover:bg-white/5 ${
+                collapsed ? "ml-0" : "ml-2"
+              }`}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
@@ -84,29 +97,41 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
                   key={item.href}
                   href={item.href}
                   title={collapsed ? item.label : undefined}
-                  className={`flex items-center gap-3 rounded-sm border px-2.5 py-2 text-sm transition-colors ${
+                  className={`flex items-center rounded-sm border text-sm transition-colors ${
                     active
                       ? "border-primary/30 bg-primary/[0.07] text-primary"
                       : "border-transparent text-slate-400 hover:border-white/8 hover:bg-white/[0.03] hover:text-white"
-                  } ${collapsed ? "justify-center" : ""}`}
+                  } ${
+                    collapsed
+                      ? "mx-auto h-10 w-10 justify-center gap-0 p-0"
+                      : "gap-3 px-2.5 py-2"
+                  }`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-                  {!collapsed && <span className="truncate">{item.label}</span>}
+                  <span className="material-symbols-outlined shrink-0 text-[18px]">{item.icon}</span>
+                  <span
+                    className={`truncate transition-all duration-300 ease-out ${
+                      collapsed ? "max-w-0 translate-x-1 opacity-0" : "max-w-[11rem] translate-x-0 opacity-100"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
           </nav>
 
           <div className="space-y-3 border-t border-white/10 p-3">
-            {!collapsed && (
-              <div className="rounded-sm border border-white/10 bg-[#0f0f0f] px-2.5 py-2 text-xs text-slate-400">
-                {auth.username
-                  ? `Signed in as @${auth.username}`
-                  : auth.walletAddress
-                    ? `${auth.walletAddress.slice(0, 6)}...${auth.walletAddress.slice(-4)}`
-                    : "Guest session"}
-              </div>
-            )}
+            <div
+              className={`overflow-hidden rounded-sm border border-white/10 bg-[#0f0f0f] px-2.5 py-2 text-xs text-slate-400 transition-all duration-300 ease-out ${
+                collapsed ? "max-h-0 border-transparent p-0 opacity-0" : "max-h-16 opacity-100"
+              }`}
+            >
+              {auth.username
+                ? `Signed in as @${auth.username}`
+                : auth.walletAddress
+                  ? `${auth.walletAddress.slice(0, 6)}...${auth.walletAddress.slice(-4)}`
+                  : "Guest session"}
+            </div>
             <WalletConnect
               initiallyLoggedIn={auth.loggedIn}
               initialWalletAddress={auth.walletAddress}
