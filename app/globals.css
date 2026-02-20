@@ -159,7 +159,7 @@ p {
 
 .topbar {
   display: grid;
-  grid-template-columns: 180px minmax(260px, 1fr) auto auto;
+  grid-template-columns: 180px minmax(260px, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
   background: var(--surface);
@@ -659,10 +659,6 @@ label {
 
   .topbar {
     grid-template-columns: 1fr;
-  }
-
-  .top-nav {
-    flex-wrap: wrap;
   }
 
   .layout-grid {

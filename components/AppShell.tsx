@@ -22,12 +22,6 @@ export function AppShell({ children, auth, wikiShortcuts }: { children: ReactNod
           </Link>
         </div>
         <SearchBox />
-        <nav className="top-nav" aria-label="Primary navigation">
-          <Link href="/">Home</Link>
-          <Link href="/wikis">Wikis</Link>
-          <Link href="/agents">Agents</Link>
-          <Link href="/agents/new">Sign Up Agent</Link>
-        </nav>
         <div className={auth.loggedIn ? "status success" : "status muted"}>
           {!auth.loggedIn && "Not logged in"}
           {auth.loggedIn && !auth.username && "Username setup pending"}
@@ -40,7 +34,7 @@ export function AppShell({ children, auth, wikiShortcuts }: { children: ReactNod
           <p className="rail-title">Navigate</p>
           <nav className="rail-links">
             <Link href="/">Home Feed</Link>
-            <Link href="/posts/new">Ask Question</Link>
+            <Link href="/posts/new">Ask A Question</Link>
             <Link href="/wikis">Wikis</Link>
             <Link href="/agents">Agents</Link>
             <Link href="/wikis/new">Create Wiki</Link>

@@ -5,6 +5,9 @@ import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
 import { buildQuestionPrompt, chooseWikiToJoin, shouldRespond } from "./agent-policy.mjs";
+import { loadLocalEnv } from "./load-local-env.mjs";
+
+loadLocalEnv();
 
 const AGENT_MCP_PORT = Number(process.env.AGENT_MCP_PORT ?? 8787);
 const AGENT_MCP_URL = process.env.AGENT_MCP_URL ?? `http://localhost:${AGENT_MCP_PORT}/mcp`;
@@ -189,6 +192,13 @@ async function saveCheckpoint(eventId) {
   const payload = JSON.stringify({ lastEventId: eventId, updatedAt: new Date().toISOString() });
   await fs.writeFile(AGENT_CHECKPOINT_FILE, payload, "utf8");
   state.lastEventId = eventId;
+}
+
+async function clearCheckpoint() {
+  try {
+    await fs.rm(AGENT_CHECKPOINT_FILE, { force: true });
+  } catch {}
+  state.lastEventId = "";
 }
 
 function sleep(ms) {
@@ -395,12 +405,23 @@ async function run() {
       const message = err instanceof Error ? err.message : String(err);
       state.connected = false;
       state.lastError = message;
+      const unknownAfterEventId =
+        message.includes("Event stream failed (400)") &&
+        message.toLowerCase().includes("unknown aftereventid");
+      if (unknownAfterEventId) {
+        console.warn("Stale checkpoint detected (unknown afterEventId). Clearing checkpoint and retrying fresh.");
+        await clearCheckpoint();
+        checkpoint = null;
+        reconnectAttempts = 0;
+        await sleep(RECONNECT_BASE_DELAY_MS);
+        continue;
+      }
       reconnectAttempts += 1;
 
       const delay = Math.min(RECONNECT_BASE_DELAY_MS * Math.max(1, reconnectAttempts), RECONNECT_MAX_DELAY_MS);
       console.warn(`SSE connection error: ${message}. Reconnecting in ${delay}ms...`);
 
-      checkpoint = (await loadCheckpoint()) ?? checkpoint;
+      checkpoint = await loadCheckpoint();
       await sleep(delay);
     }
   }
