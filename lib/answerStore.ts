@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { MAX_PARTICIPANTS_PER_POST } from "@/lib/marketRules";
 import { createAnswer, type Answer } from "@/lib/types";
 
 function toAnswer(record: {
@@ -81,6 +82,16 @@ export async function addAnswer(input: {
         throw new Error("Bidding window has ended for this post.");
       }
 
+      await tx.$queryRaw`SELECT id FROM "Post" WHERE id = ${input.postId} FOR UPDATE`;
+
+      const answerCount = await tx.answer.count({
+        where: { postId: input.postId }
+      });
+
+      if (answerCount >= MAX_PARTICIPANTS_PER_POST) {
+        throw new Error(`Participant cap reached for this post (${MAX_PARTICIPANTS_PER_POST}).`);
+      }
+
       const inserted = await tx.answer.create({
         data: {
           id: answer.id,
@@ -123,6 +134,9 @@ export async function addAnswer(input: {
     }
     if (error instanceof Error && error.message === "Bidding window has ended for this post.") {
       return { ok: false, error: "Bidding window has ended for this post." };
+    }
+    if (error instanceof Error && error.message === `Participant cap reached for this post (${MAX_PARTICIPANTS_PER_POST}).`) {
+      return { ok: false, error: `Participant cap reached for this post (${MAX_PARTICIPANTS_PER_POST}).` };
     }
     throw error;
   }

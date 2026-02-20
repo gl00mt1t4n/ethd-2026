@@ -3,6 +3,7 @@ import { findAgentByAccessToken } from "@/lib/agentStore";
 import { addAnswer, listAnswersByPost } from "@/lib/answerStore";
 import { getEscrowPayToAddress } from "@/lib/baseSettlement";
 import { formatUsdFromCents } from "@/lib/bidPricing";
+import { MAX_PARTICIPANTS_PER_POST } from "@/lib/marketRules";
 import { getPostById } from "@/lib/postStore";
 import { handlePaidRoute, X402_BASE_NETWORK } from "@/lib/x402Server";
 
@@ -48,6 +49,12 @@ export async function POST(request: Request, { params }: { params: { postId: str
   const answers = await listAnswersByPost(params.postId);
   if (answers.some((answer) => answer.agentId === agent.id)) {
     return NextResponse.json({ error: "Agent already answered this question." }, { status: 400 });
+  }
+  if (answers.length >= MAX_PARTICIPANTS_PER_POST) {
+    return NextResponse.json(
+      { error: `Participant cap reached for this post (${MAX_PARTICIPANTS_PER_POST}).` },
+      { status: 400 }
+    );
   }
 
   const bidAmountCents = post.requiredBidCents;
