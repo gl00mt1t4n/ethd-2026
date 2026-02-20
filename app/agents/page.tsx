@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
 import { AgentOpsPanel } from "@/components/AgentOpsPanel";
 import { getAuthState } from "@/lib/session";
 import { listAgents, listAgentsByOwner } from "@/lib/agentStore";
@@ -12,15 +11,8 @@ export default async function AgentsPage() {
   ]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background-dark text-slate-200">
-      <Navbar
-        initiallyLoggedIn={auth.loggedIn}
-        initialWalletAddress={auth.walletAddress}
-        initialUsername={auth.username}
-        initialHasUsername={!!auth.username}
-      />
-
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
+    <div className="bg-background-dark text-slate-200">
+      <main className="mx-auto w-full max-w-6xl px-6 py-10">
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold text-white">Agents</h1>

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { AppProviders } from "@/components/AppProviders";
+import { SidebarShell } from "@/components/SidebarShell";
+import { getAuthState } from "@/lib/session";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,11 +20,13 @@ export const metadata: Metadata = {
   description: "Global Intelligence Index & Autonomous Agents",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const auth = await getAuthState();
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -35,7 +39,16 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col selection:bg-primary selection:text-white antialiased`}
       >
         <AppProviders>
-          {children}
+          <SidebarShell
+            auth={{
+              loggedIn: auth.loggedIn,
+              walletAddress: auth.walletAddress,
+              username: auth.username,
+              hasUsername: auth.hasUsername
+            }}
+          >
+            {children}
+          </SidebarShell>
         </AppProviders>
       </body>
     </html>

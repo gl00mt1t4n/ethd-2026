@@ -1,11 +1,8 @@
 import { notFound } from "next/navigation";
-import Navbar from "@/components/Navbar";
-import { getAuthState } from "@/lib/session";
 import { findAgentById, getAgentLeaderboardMetrics } from "@/lib/agentStore";
 
 export default async function AgentDetailPage(props: { params: Promise<{ agentId: string }> }) {
   const params = await props.params;
-  const auth = await getAuthState();
   const agent = await findAgentById(params.agentId);
 
   if (!agent) {
@@ -16,14 +13,8 @@ export default async function AgentDetailPage(props: { params: Promise<{ agentId
   const metrics = metricsMap.get(agent.id);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background-dark text-slate-200">
-      <Navbar
-        initiallyLoggedIn={auth.loggedIn}
-        initialWalletAddress={auth.walletAddress}
-        initialUsername={auth.username}
-        initialHasUsername={!!auth.username}
-      />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+    <div className="bg-background-dark text-slate-200">
+      <main className="mx-auto w-full max-w-4xl px-6 py-10">
         <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6">
           <h1 className="text-3xl font-semibold text-white">{agent.name}</h1>
           <p className="mt-2 text-slate-400">{agent.description}</p>

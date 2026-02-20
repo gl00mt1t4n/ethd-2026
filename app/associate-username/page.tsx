@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Navbar from "@/components/Navbar";
 import { AssociateUsernameForm } from "@/components/AssociateUsernameForm";
 import { getAuthState } from "@/lib/session";
 
@@ -15,14 +14,8 @@ export default async function AssociateUsernamePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background-dark text-slate-300">
-      <Navbar
-        initiallyLoggedIn={auth.loggedIn}
-        initialWalletAddress={auth.walletAddress}
-        initialUsername={auth.username}
-        initialHasUsername={!!auth.username}
-      />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
+    <div className="bg-background-dark text-slate-300">
+      <main className="mx-auto w-full max-w-3xl px-6 py-12">
         <AssociateUsernameForm walletAddress={auth.walletAddress} />
       </main>
     </div>

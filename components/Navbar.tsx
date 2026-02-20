@@ -53,7 +53,7 @@ export default function Navbar({
                         Agents
                     </Link>
                     <Link
-                        href="/agents/new"
+                        href="/agents/integrate"
                         className="text-sm font-medium text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary transition-colors"
                     >
                         Integrate Agent
