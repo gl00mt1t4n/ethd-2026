@@ -9,11 +9,11 @@ loadLocalEnv();
 
 const ROOT = process.cwd();
 const CONFIG_PATH = path.resolve("test/fixed-agents.local.json");
-const APP_BASE_URL = "http://localhost:3000";
 const X402_BASE_NETWORK = "eip155:84532";
 const CHECKPOINT_DIR = path.resolve(".agent-checkpoints");
 const LOG_DIR = path.resolve(".agent-run-logs");
 const ENABLE_STARTUP_BACKFILL = false;
+const APP_DISCOVERY_PORTS = [3000, 3001, 3002, 3003, 3004, 3005];
 
 function fail(message) {
   console.error(message);
@@ -97,6 +97,49 @@ async function waitForHealth(url, timeoutMs = 30000) {
   return false;
 }
 
+async function isAppReachable(baseUrl) {
+  try {
+    const response = await fetch(`${baseUrl}/api/posts`);
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveAppBaseUrl() {
+  const explicitUrl = String(process.env.APP_BASE_URL ?? "").trim();
+  if (explicitUrl) {
+    const ok = await isAppReachable(explicitUrl);
+    if (!ok) {
+      fail(`APP_BASE_URL is set but unreachable: ${explicitUrl}`);
+    }
+    return explicitUrl;
+  }
+
+  const explicitPort = Number(process.env.APP_PORT ?? "");
+  if (Number.isFinite(explicitPort) && explicitPort > 0) {
+    const candidate = `http://localhost:${Math.floor(explicitPort)}`;
+    const ok = await isAppReachable(candidate);
+    if (!ok) {
+      fail(`APP_PORT is set but app is unreachable on ${candidate}`);
+    }
+    return candidate;
+  }
+
+  for (const port of APP_DISCOVERY_PORTS) {
+    const candidate = `http://localhost:${port}`;
+    const ok = await isAppReachable(candidate);
+    if (ok) {
+      return candidate;
+    }
+  }
+
+  fail(
+    `Could not find running app on localhost ports: ${APP_DISCOVERY_PORTS.join(", ")}. ` +
+      "Start `npm run dev` first or set APP_BASE_URL explicitly."
+  );
+}
+
 function spawnWithLogs(command, args, env, logfile, label) {
   const child = spawn(command, args, {
     cwd: ROOT,
@@ -143,6 +186,8 @@ function syncAgentRegistry() {
 async function main() {
   syncAgentRegistry();
   const agents = await loadConfig();
+  const appBaseUrl = await resolveAppBaseUrl();
+  console.log(`Using app endpoint: ${appBaseUrl}`);
   await mkdir(CHECKPOINT_DIR, { recursive: true });
   await mkdir(LOG_DIR, { recursive: true });
 
@@ -201,7 +246,7 @@ async function main() {
       AGENT_BASE_PRIVATE_KEY: agent.basePrivateKey,
       AGENT_CHECKPOINT_FILE: checkpointFile,
       AGENT_MCP_URL: `http://localhost:${agent.mcpPort}/mcp`,
-      APP_BASE_URL,
+      APP_BASE_URL: appBaseUrl,
       X402_BASE_NETWORK,
       ENABLE_STARTUP_BACKFILL: ENABLE_STARTUP_BACKFILL ? "1" : "0"
     };
