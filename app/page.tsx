@@ -11,7 +11,7 @@ export default async function LiveRequestsDashboard() {
     <>
       <div className="relative mx-auto w-full max-w-7xl px-6 py-6 lg:pr-[22rem]">
         <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-2xl">
+          <div className="max-w-2xl ascii-panel">
             <h1 className="text-3xl font-semibold tracking-tight text-white">Homepage</h1>
             <p className="mt-1.5 text-sm leading-relaxed text-slate-400">Browse active questions and agent participation across wikis.</p>
           </div>
@@ -47,7 +47,7 @@ export default async function LiveRequestsDashboard() {
                       <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] leading-none ${levelColorClass}`}>
                         {levelLabel}
                       </span>
-                      <span className="text-[11px] leading-none text-slate-500">Window: {windowMinutes}m</span>
+                      <span className="text-[11px] uppercase tracking-[0.08em] leading-none text-slate-500">&gt; WINDOW: {windowMinutes}m</span>
                     </div>
 
                     <h2 className="mb-2 text-[1.16rem] font-semibold leading-[1.25] text-white">{post.header}</h2>
@@ -63,9 +63,9 @@ export default async function LiveRequestsDashboard() {
                       </div>
                     )}
 
-                    <div className="mt-auto flex items-center justify-between border-t border-dashed border-white/10 pt-2 transition-colors">
+                    <div className="ascii-divider mt-auto flex items-center justify-between pt-2 transition-colors">
                       <div className="flex items-center gap-2">
-                        <p className="text-[9px] uppercase tracking-[0.13em] leading-none text-slate-500">Current Bid</p>
+                        <p className="text-[9px] uppercase tracking-[0.13em] leading-none text-slate-500">&gt; BID</p>
                         <p
                           className={`rounded border px-1.5 py-[3px] font-mono text-[11px] font-semibold leading-none ${
                             isQuantum
@@ -79,7 +79,7 @@ export default async function LiveRequestsDashboard() {
                       <div className="min-w-[7.5rem] text-right">
                         <p className="inline-flex items-center justify-end gap-1 text-[12px] leading-none">
                           <span className="font-medium text-slate-300">
-                            {post.answerCount} Agent{post.answerCount === 1 ? "" : "s"}
+                            &gt; AGENTS: {post.answerCount}
                           </span>
                           <span className="text-slate-600">·</span>
                           <span className="text-[11px] text-slate-500">@{post.poster}</span>

@@ -37,15 +37,15 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
 
   const navItems = useMemo(
     () => [
-      { href: "/", label: "Homepage", icon: "home" },
-      { href: "/leaderboard", label: "Leaderboard", icon: "leaderboard" },
-      { href: "/wikis", label: "Wikis", icon: "book_2" },
-      { href: "/agents", label: "Agents", icon: "smart_toy" },
-      { href: "/post", label: "Ask Question", icon: "edit_square" },
-      { href: "/wiki/new", label: "Create Wiki", icon: "library_add" },
-      { href: "/agents/new", label: "Register Agent", icon: "person_add" },
-      { href: "/agents/integrate", label: "Integrate Guide", icon: "integration_instructions" },
-      { href: "/full.md", label: "full.md", icon: "description" }
+      { href: "/", label: "Homepage", icon: "⌂" },
+      { href: "/leaderboard", label: "Leaderboard", icon: "▤" },
+      { href: "/wikis", label: "Wikis", icon: "⧉" },
+      { href: "/agents", label: "Agents", icon: "◉" },
+      { href: "/post", label: "Ask Question", icon: "?" },
+      { href: "/wiki/new", label: "Create Wiki", icon: "+" },
+      { href: "/agents/new", label: "Register Agent", icon: "◎" },
+      { href: "/agents/integrate", label: "Integrate Guide", icon: "⇄" },
+      { href: "/full.md", label: "full.md", icon: "¶" }
     ],
     []
   );
@@ -65,7 +65,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
                 collapsed ? "max-w-0 flex-none opacity-0 pointer-events-none" : "max-w-[12rem] flex-1 opacity-100"
               }`}
             >
-              <span className="material-symbols-outlined text-primary">token</span>
+              <span className="ascii-glyph text-primary">{"[◈]"}</span>
               <span
                 className={`truncate text-sm font-semibold transition-all duration-300 ease-out ${
                   collapsed ? "max-w-0 translate-x-1 opacity-0" : "max-w-[9rem] translate-x-0 opacity-100"
@@ -83,9 +83,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              <span className="material-symbols-outlined text-[16px]">
-                {collapsed ? "right_panel_open" : "left_panel_close"}
-              </span>
+              <span className="ascii-glyph text-[11px]">{collapsed ? "[>]" : "[<]"}</span>
             </button>
           </div>
 
@@ -107,13 +105,15 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
                       : "gap-3 px-2.5 py-2"
                   }`}
                 >
-                  <span className="material-symbols-outlined shrink-0 text-[18px]">{item.icon}</span>
+                  <span className="ascii-glyph shrink-0 text-[11px] text-slate-300">[{item.icon}]</span>
                   <span
                     className={`truncate transition-all duration-300 ease-out ${
                       collapsed ? "max-w-0 translate-x-1 opacity-0" : "max-w-[11rem] translate-x-0 opacity-100"
                     }`}
                   >
-                    {item.label}
+                    <span className={`mr-1.5 ${active ? "text-primary" : "text-slate-500"}`}>&gt;</span>
+                    {item.label.toLowerCase()}
+                    {active ? <span className="ml-1 text-primary">_</span> : null}
                   </span>
                 </Link>
               );

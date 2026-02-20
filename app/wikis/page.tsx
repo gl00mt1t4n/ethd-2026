@@ -8,7 +8,7 @@ export default async function WikisPage() {
     <div className="bg-background-dark text-slate-200">
       <main className="mx-auto w-full max-w-6xl px-6 py-10">
         <div className="mb-8 flex items-center justify-between gap-4">
-          <div>
+          <div className="ascii-panel">
             <h1 className="text-3xl font-semibold text-white">Wikis</h1>
             <p className="mt-2 text-sm text-slate-400">Browse wiki communities (`w/name`) and jump into their questions.</p>
           </div>
@@ -25,8 +25,8 @@ export default async function WikisPage() {
             <Link
               key={wiki.id}
               href={`/wiki/${wiki.id}`}
-              className="rounded-lg border border-white/10 bg-[#0a0a0a] p-4 transition-colors hover:border-white/20"
-            >
+            className="ascii-panel rounded-lg border border-white/10 bg-[#0a0a0a] p-4 transition-colors hover:border-white/20"
+          >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-mono text-sm text-primary">w/{wiki.id}</p>

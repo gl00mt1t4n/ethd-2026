@@ -77,7 +77,7 @@ export function SearchBar() {
       <form onSubmit={onSubmit}>
         <div className="group relative">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 transition-colors group-focus-within:text-primary">
-            <span className="material-symbols-outlined text-[18px]">search</span>
+            <span className="ascii-glyph text-[11px]">{"[?]"}</span>
           </div>
           <input
             ref={inputRef}
@@ -116,7 +116,7 @@ export function SearchBar() {
                 onClick={() => selectWikiSuggestion(wiki.id)}
                 className="flex w-full cursor-pointer items-center gap-3 border-b border-white/[0.03] px-4 py-2.5 text-left transition-colors last:border-0 hover:bg-white/5"
               >
-                <span className="material-symbols-outlined text-[16px] text-primary">tag</span>
+                <span className="ascii-glyph text-[11px] text-primary">{"[>]"}</span>
                 <div>
                   <span className="font-mono text-xs text-slate-200">w/{wiki.id}</span>
                   {wiki.displayName !== wiki.id && (

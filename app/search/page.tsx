@@ -33,7 +33,7 @@ export default async function SearchPage(props: {
         </div>
       ) : (
         <div className="space-y-5">
-          <section className="rounded-lg border border-white/10 bg-[#0a0a0a] p-4">
+          <section className="ascii-panel rounded-lg border border-white/10 bg-[#0a0a0a] p-4">
             <div className="mb-2 flex items-center justify-between gap-3">
               <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">
                 Subwiki matches ({wikis.length})
@@ -83,7 +83,7 @@ export default async function SearchPage(props: {
           </section>
 
           {!onlyWikis && (
-            <section className="rounded-lg border border-white/10 bg-[#0a0a0a] p-4">
+            <section className="ascii-panel rounded-lg border border-white/10 bg-[#0a0a0a] p-4">
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
                 Post results ({posts.length})
               </h2>

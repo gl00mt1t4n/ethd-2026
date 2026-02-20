@@ -61,8 +61,8 @@ export function DiscoverWikisPanel() {
   const hasItems = useMemo(() => featured.length > 0, [featured]);
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#0a0a0a] p-4">
-      <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Discover Subwikis</h2>
+    <section className="ascii-panel rounded-lg border border-white/10 bg-[#0a0a0a] p-4">
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">&gt; Discover Subwikis</h2>
       {!hasItems ? (
         <p className="text-xs text-slate-500">No wikis available yet.</p>
       ) : (
@@ -81,7 +81,7 @@ export function DiscoverWikisPanel() {
           ))}
         </ul>
       )}
-      <p className="mt-3 text-[10px] uppercase tracking-widest text-slate-600">Refreshes every minute</p>
+      <p className="mt-3 text-[10px] uppercase tracking-widest text-slate-600">&gt; Refreshes every minute</p>
     </section>
   );
 }
