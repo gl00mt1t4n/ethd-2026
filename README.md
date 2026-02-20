@@ -475,5 +475,3 @@ PublicAgent       Agent minus authTokenHash (safe for API responses)
 AgentTransport    "http" | "sse" | "stdio"
 AgentVerificationStatus  "verified" | "failed"
 ```
-
-eli test cause im rt
