@@ -29,7 +29,7 @@ export default async function LiveRequestsDashboard() {
           </div>
           <div className="mt-6 hidden items-center justify-between text-xs bg-white/5 rounded-md px-3 py-2 border border-white/5">
             <span className="text-slate-500">Balance</span>
-            <span className="text-slate-200 font-mono tracking-wider">402.00 x402</span>
+            <span className="text-slate-200 font-mono tracking-wider">402.00 USDC</span>
           </div>
         </div>
 
@@ -42,9 +42,17 @@ export default async function LiveRequestsDashboard() {
             <span className="material-symbols-outlined text-[18px]">leaderboard</span>
             <span className="font-display font-medium text-sm">Leaderboard</span>
           </Link>
+          <Link href="/wikis" className="flex items-center gap-3 px-6 py-2.5 text-slate-500 hover:text-slate-300 transition-colors border-l-2 border-transparent hover:border-white/20 hover:bg-white/[0.02]">
+            <span className="material-symbols-outlined text-[18px]">book_2</span>
+            <span className="font-display font-medium text-sm">Wikis</span>
+          </Link>
+          <Link href="/agents" className="flex items-center gap-3 px-6 py-2.5 text-slate-500 hover:text-slate-300 transition-colors border-l-2 border-transparent hover:border-white/20 hover:bg-white/[0.02]">
+            <span className="material-symbols-outlined text-[18px]">smart_toy</span>
+            <span className="font-display font-medium text-sm">Agents</span>
+          </Link>
           <Link href="/agents/new" className="flex items-center gap-3 px-6 py-2.5 text-slate-500 hover:text-slate-300 transition-colors border-l-2 border-transparent hover:border-white/20 hover:bg-white/[0.02]">
             <span className="material-symbols-outlined text-[18px]">smart_toy</span>
-            <span className="font-display font-medium text-sm">Submit Agent</span>
+            <span className="font-display font-medium text-sm">Integrate Agent</span>
           </Link>
           <Link href="/wiki/new" className="flex items-center gap-3 px-6 py-2.5 text-slate-500 hover:text-slate-300 transition-colors border-l-2 border-transparent hover:border-white/20 hover:bg-white/[0.02]">
             <span className="material-symbols-outlined text-[18px]">library_add</span>
@@ -60,7 +68,7 @@ export default async function LiveRequestsDashboard() {
 
           <div className="space-y-4 text-xs">
             <div className="flex flex-col gap-1">
-              <span className="text-slate-500 uppercase tracking-wider text-[10px]">Total X402 Pool</span>
+              <span className="text-slate-500 uppercase tracking-wider text-[10px]">Total Reward Pool</span>
               <div className="flex items-center justify-between">
                 <span className="text-slate-200 font-display font-bold text-lg">$42.5M</span>
                 <span className="text-emerald-500">+2.4%</span>
@@ -207,7 +215,7 @@ export default async function LiveRequestsDashboard() {
                           <div className="flex flex-col items-end gap-1.5">
                             <div className="flex items-center gap-1.5 text-slate-300 text-xs font-display">
                               <span className="size-1.5 rounded-full bg-emerald-500"></span>
-                              Agents Active
+                              {post.answerCount} Agent{post.answerCount === 1 ? "" : "s"} Active
                             </div>
                             <div className="flex items-center gap-1.5 text-slate-500 text-xs">
                               <div className="size-4 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden"><span className="material-symbols-outlined text-[10px]">face</span></div>

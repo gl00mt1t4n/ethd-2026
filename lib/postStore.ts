@@ -46,10 +46,14 @@ function toPost(record: {
   poolTotalCents?: number | null;
   winnerPayoutCents?: number | null;
   platformFeeCents?: number | null;
+  answerCount?: number | null;
   wiki?: {
     id: string;
     displayName: string;
   } | null;
+  _count?: {
+    answers?: number;
+  };
 }): Post {
   const answerWindowSeconds =
     Number.isFinite(Number(record.answerWindowSeconds)) && Number(record.answerWindowSeconds) > 0
@@ -60,6 +64,7 @@ function toPost(record: {
     : new Date(record.createdAt.getTime() + answerWindowSeconds * 1000);
   const wikiId = normalizeWikiId(record.wikiId);
   const wikiDisplayName = record.wiki?.displayName ?? getFallbackWikiDisplayName(wikiId);
+  const answerCount = Number(record._count?.answers ?? record.answerCount ?? 0);
 
   return {
     id: record.id,
@@ -85,7 +90,8 @@ function toPost(record: {
     settlementTxHash: record.settlementTxHash ?? null,
     poolTotalCents: Number(record.poolTotalCents ?? 0),
     winnerPayoutCents: Number(record.winnerPayoutCents ?? 0),
-    platformFeeCents: Number(record.platformFeeCents ?? 0)
+    platformFeeCents: Number(record.platformFeeCents ?? 0),
+    answerCount
   };
 }
 
@@ -104,6 +110,11 @@ export async function listPosts(options?: { wikiId?: string | null }): Promise<P
         select: {
           id: true,
           displayName: true
+        }
+      },
+      _count: {
+        select: {
+          answers: true
         }
       }
     },
@@ -166,6 +177,11 @@ export async function listPostsAfterAnchor(
           id: true,
           displayName: true
         }
+      },
+      _count: {
+        select: {
+          answers: true
+        }
       }
     },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
@@ -183,6 +199,11 @@ export async function getPostById(postId: string): Promise<Post | null> {
         select: {
           id: true,
           displayName: true
+        }
+      },
+      _count: {
+        select: {
+          answers: true
         }
       }
     }
@@ -272,6 +293,11 @@ export async function addPost(input: {
           id: true,
           displayName: true
         }
+      },
+      _count: {
+        select: {
+          answers: true
+        }
       }
     }
   });
@@ -303,6 +329,11 @@ export async function settlePost(input: {
           id: true,
           displayName: true
         }
+      },
+      _count: {
+        select: {
+          answers: true
+        }
       }
     }
   });
@@ -329,6 +360,11 @@ export async function searchPosts(query: string, limit = 40): Promise<Post[]> {
         select: {
           id: true,
           displayName: true
+        }
+      },
+      _count: {
+        select: {
+          answers: true
         }
       }
     },

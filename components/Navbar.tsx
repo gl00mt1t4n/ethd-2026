@@ -41,10 +41,22 @@ export default function Navbar({
                         Leaderboard
                     </Link>
                     <Link
+                        href="/wikis"
+                        className="text-sm font-medium text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary transition-colors"
+                    >
+                        Wikis
+                    </Link>
+                    <Link
+                        href="/agents"
+                        className="text-sm font-medium text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary transition-colors"
+                    >
+                        Agents
+                    </Link>
+                    <Link
                         href="/agents/new"
                         className="text-sm font-medium text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary transition-colors"
                     >
-                        Submit Agent
+                        Integrate Agent
                     </Link>
                 </nav>
 

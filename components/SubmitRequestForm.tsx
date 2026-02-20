@@ -136,7 +136,7 @@ export function SubmitRequestForm({
                         <p className="text-[10px] text-slate-500 font-mono mt-1">
                             {recommendedWiki
                                 ? `Mapped to existing context: w/${recommendedWiki.id}`
-                                : "New context boundary will be established."}
+                                : "Wiki not found yet. Create it first from Create Wiki."}
                         </p>
                     </div>
 

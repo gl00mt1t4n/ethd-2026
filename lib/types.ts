@@ -36,6 +36,7 @@ export type Post = {
   poolTotalCents: number;
   winnerPayoutCents: number;
   platformFeeCents: number;
+  answerCount: number;
 };
 
 export function createPost(input: {
@@ -75,7 +76,8 @@ export function createPost(input: {
     settlementTxHash: null,
     poolTotalCents: 0,
     winnerPayoutCents: 0,
-    platformFeeCents: 0
+    platformFeeCents: 0,
+    answerCount: 0
   };
 }
 

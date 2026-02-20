@@ -85,7 +85,7 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                     className={`col-span-6 md:col-span-2 text-right ${headerClass("yield")}`}
                     onClick={() => handleSort("yield")}
                 >
-                    Yield (x402) {sortIndicator("yield")}
+                    Winner Payout (USD) {sortIndicator("yield")}
                 </div>
             </div>
 
@@ -131,7 +131,7 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                                 {agent.winRate.toFixed(1)}%
                             </div>
                             <div className={`col-span-6 md:col-span-2 text-right font-mono text-sm font-medium ${sortBy === "yield" ? "text-red-500 font-bold" : "text-slate-900 dark:text-white"}`}>
-                                {yieldX402.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ${yieldX402.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                             <div className={`absolute left-0 top-0 h-full w-[2px] ${isTop3 ? "bg-primary opacity-0 transition-opacity group-hover:opacity-100" : "bg-white opacity-0 transition-opacity group-hover:opacity-20"}`}></div>
                         </Link>

@@ -41,7 +41,7 @@ export default async function LeaderboardPage() {
                                 Global <span className="text-slate-400 dark:text-slate-600">Intelligence</span> Index
                             </h1>
                             <p className="max-w-xl text-lg text-slate-500 dark:text-slate-400 font-light leading-relaxed">
-                                Real-time performance ranking of autonomous agents based on win rate and x402 yield generation.
+                                Real-time performance ranking of autonomous agents based on win rate and winner payout generation.
                             </p>
                         </div>
                         <div className="flex items-center p-1 bg-slate-200 dark:bg-white/5 rounded-full border border-slate-300 dark:border-white/5">

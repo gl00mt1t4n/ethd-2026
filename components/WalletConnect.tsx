@@ -191,7 +191,7 @@ export function WalletConnect({
             <div className="flex items-center gap-6">
                 <div className="hidden items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-sm font-medium text-primary">
                     <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>
-                    <span>{balanceAmount} x402</span>
+                    <span>{balanceAmount} USDC</span>
                 </div>
 
                 <div className="flex items-center justify-center gap-2">

@@ -8,6 +8,16 @@ import { listAnswersByPost } from "@/lib/answerStore";
 import { ConsensusPanel } from "@/components/ConsensusPanel";
 import { PostAutoRefresh } from "@/components/PostAutoRefresh";
 
+function getExplorerTxBase(paymentNetwork: string): string | null {
+    if (paymentNetwork === "eip155:84532") {
+        return "https://sepolia.basescan.org/tx/";
+    }
+    if (paymentNetwork === "eip155:8453") {
+        return "https://basescan.org/tx/";
+    }
+    return null;
+}
+
 export default async function QuestionDetailPage(props: { params: Promise<{ postId: string }> }) {
     const params = await props.params;
     const auth = await getAuthState();
@@ -145,14 +155,22 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                                         </div>
                                         <div className="flex-1 text-xs text-slate-600 font-mono text-right">
                                             {answer.paymentTxHash ? (
-                                                <a
-                                                    href={`https://sepolia.basescan.org/tx/${answer.paymentTxHash}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-slate-600 hover:text-primary transition-colors"
-                                                >
-                                                    Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}
-                                                </a>
+                                                (() => {
+                                                    const txBase = getExplorerTxBase(answer.paymentNetwork);
+                                                    if (!txBase) {
+                                                        return <>Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}</>;
+                                                    }
+                                                    return (
+                                                        <a
+                                                            href={`${txBase}${answer.paymentTxHash}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-slate-600 hover:text-primary transition-colors"
+                                                        >
+                                                            Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}
+                                                        </a>
+                                                    );
+                                                })()
                                             ) : (
                                                 <>Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}</>
                                             )}
@@ -175,6 +193,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                 answers={answers.map(a => ({ id: a.id, agentName: a.agentName }))}
                 isSettled={post.settlementStatus === "settled"}
                 ownerUsername={post.poster}
+                currentUsername={auth.username}
             />
         </>
     );

@@ -107,6 +107,13 @@ export function SearchBar() {
             .finally(() => setSearching(false));
     }
 
+    function navigateToWiki(wikiId: string) {
+        setShowDropdown(false);
+        setQuery("");
+        setSearchResults(null);
+        router.push(`/wiki/${wikiId}`);
+    }
+
     const hasAnySuggestions = suggestions.length > 0;
     const hasResults = searchResults && (searchResults.posts.length > 0 || searchResults.wikis.length > 0);
     const showSuggestions = showDropdown && trimmedQuery && hasAnySuggestions && !searchResults;
@@ -200,9 +207,10 @@ export function SearchBar() {
                                         </span>
                                     </div>
                                     {searchResults!.wikis.map((wiki) => (
-                                        <div
+                                        <button
                                             key={wiki.id}
-                                            className="px-4 py-2.5 flex items-center gap-3 border-b border-white/[0.03] last:border-0"
+                                            onClick={() => navigateToWiki(wiki.id)}
+                                            className="w-full px-4 py-2.5 flex items-center gap-3 border-b border-white/[0.03] last:border-0 hover:bg-white/5 text-left"
                                         >
                                             <span className="material-symbols-outlined text-[16px] text-primary">tag</span>
                                             <div>
@@ -211,7 +219,7 @@ export function SearchBar() {
                                                     <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">{wiki.description}</p>
                                                 )}
                                             </div>
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
                             )}
