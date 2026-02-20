@@ -38,7 +38,7 @@ main {
 .topbar {
   display: grid;
   gap: 10px;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr minmax(200px, 320px) auto;
   align-items: center;
 }
 
@@ -118,6 +118,27 @@ button.secondary:hover {
 
 .status {
   font-size: 0.9rem;
+  text-align: right;
+}
+
+.search-box {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.search-box input {
+  min-width: 160px;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .status {
+    text-align: left;
+  }
 }
 
 .post-card {

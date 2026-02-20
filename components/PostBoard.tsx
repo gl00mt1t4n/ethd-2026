@@ -101,6 +101,9 @@ export function PostBoard({
         <p style={{ margin: 0 }} className="muted">
           Chronological feed for this wiki. New posts open their dedicated waiting page.
         </p>
+        <div className="navlinks">
+          <Link href="/wikis/new">Create Wiki</Link>
+        </div>
         {currentWalletAddress && !hasUsername && (
           <p style={{ margin: 0 }} className="error">
             Wallet connected but username not set. <Link href="/associate-username">Finish setup</Link>.
@@ -138,7 +141,7 @@ export function PostBoard({
           <span className="post-meta">
             {recommendedWiki
               ? `Best match: w/${recommendedWiki.id}`
-              : "No match found. Posting will create a new wiki."}
+              : "No wiki match found. Create it first from Create Wiki."}
           </span>
         </label>
         <label>

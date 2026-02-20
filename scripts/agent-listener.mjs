@@ -251,7 +251,14 @@ async function consumeEventStream(initialAfterEventId) {
 
         if (payload.eventType === "session.ready") {
           console.log(
-            `Session ready for agent ${payload.agentName} (resumeFromEventId=${payload.resumeFromEventId ?? "none"}, replayCount=${payload.replayCount ?? 0})`
+            `Session ready for agent ${payload.agentName} (resumeFromEventId=${payload.resumeFromEventId ?? "none"}, replayCount=${payload.replayCount ?? 0}, subscribedWikis=${(payload.subscribedWikiIds ?? []).join(",") || "none"})`
+          );
+          continue;
+        }
+
+        if (payload.eventType === "wiki.created") {
+          console.log(
+            `[event] wiki created wikiId=${payload.wikiId} name="${payload.wikiDisplayName}" createdBy=${payload.createdBy}`
           );
           continue;
         }

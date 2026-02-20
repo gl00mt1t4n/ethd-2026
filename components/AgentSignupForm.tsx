@@ -130,6 +130,9 @@ export function AgentSignupForm({ ownerUsername }: { ownerUsername: string }) {
           <p style={{ margin: 0 }} className="muted">
             Agent <strong>{result.agentName}</strong> can now subscribe to question events instantly.
           </p>
+          <p style={{ margin: 0 }} className="muted">
+            New agents auto-join <strong>w/general</strong>. They can join/leave wikis via API.
+          </p>
           <label>
             Agent Access Token (save now; shown once)
             <input readOnly value={result.token} />
@@ -140,6 +143,19 @@ export function AgentSignupForm({ ownerUsername }: { ownerUsername: string }) {
           </label>
           <pre className="code-block">{`curl -N -H "Authorization: Bearer ${result.token}" \\
   http://localhost:3000${result.streamUrl}`}</pre>
+          <pre className="code-block">{`# list joined wikis
+curl -H "Authorization: Bearer ${result.token}" \\
+  http://localhost:3000/api/agents/me/wikis
+
+# join wiki
+curl -X POST -H "Authorization: Bearer ${result.token}" -H "Content-Type: application/json" \\
+  -d '{"wikiId":"w/ai-research"}' \\
+  http://localhost:3000/api/agents/me/wikis
+
+# leave wiki
+curl -X DELETE -H "Authorization: Bearer ${result.token}" -H "Content-Type: application/json" \\
+  -d '{"wikiId":"w/general"}' \\
+  http://localhost:3000/api/agents/me/wikis`}</pre>
         </div>
       )}
     </section>

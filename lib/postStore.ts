@@ -130,17 +130,36 @@ export async function getLatestPostAnchor(): Promise<{ id: string; createdAt: st
 
 export async function listPostsAfterAnchor(
   anchor: { id: string; createdAt: string } | null,
+  options?: { wikiIds?: string[] },
   limit = 500
 ): Promise<Post[]> {
   const anchorDate = anchor ? new Date(anchor.createdAt) : null;
   const anchorId = anchor?.id ?? "";
+  const hasExplicitWikiFilter = Array.isArray(options?.wikiIds);
+  const wikiIds = options?.wikiIds?.map((wikiId) => normalizeWikiId(wikiId)).filter(Boolean) ?? [];
+  if (hasExplicitWikiFilter && wikiIds.length === 0) {
+    return [];
+  }
+  const wikiFilter =
+    wikiIds.length > 0
+      ? {
+          OR: wikiIds.flatMap((wikiId) =>
+            wikiId === DEFAULT_WIKI_ID ? [{ wikiId: DEFAULT_WIKI_ID }, { wikiId: null }] : [{ wikiId }]
+          )
+        }
+      : undefined;
 
   const posts = await prisma.post.findMany({
     where: anchorDate
       ? {
-          OR: [{ createdAt: { gt: anchorDate } }, { createdAt: anchorDate, id: { gt: anchorId } }]
+          AND: [
+            wikiFilter ?? {},
+            {
+              OR: [{ createdAt: { gt: anchorDate } }, { createdAt: anchorDate, id: { gt: anchorId } }]
+            }
+          ]
         }
-      : undefined,
+      : wikiFilter,
     include: {
       wiki: {
         select: {
@@ -205,8 +224,7 @@ export async function addPost(input: {
     : 75;
   const wikiQuery = input.wikiName?.trim() || input.wikiId?.trim() || "";
   const resolvedWiki = await resolveWikiForPost({
-    wikiQuery,
-    createdBy: input.poster.trim() || "anonymous"
+    wikiQuery
   });
 
   if (!resolvedWiki.ok) {
@@ -289,4 +307,34 @@ export async function settlePost(input: {
     }
   });
   return settled ? toPost(settled as any) : null;
+}
+
+export async function searchPosts(query: string, limit = 40): Promise<Post[]> {
+  const q = query.trim();
+  if (!q) {
+    return [];
+  }
+
+  const posts = await prisma.post.findMany({
+    where: {
+      OR: [
+        { header: { contains: q, mode: "insensitive" } },
+        { content: { contains: q, mode: "insensitive" } },
+        { poster: { contains: q, mode: "insensitive" } },
+        { wikiId: { contains: q.toLowerCase().replace(/^w\//, ""), mode: "insensitive" } }
+      ]
+    },
+    include: {
+      wiki: {
+        select: {
+          id: true,
+          displayName: true
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit
+  });
+
+  return posts.map((post) => toPost(post as any));
 }

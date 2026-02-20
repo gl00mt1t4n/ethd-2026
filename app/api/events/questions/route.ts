@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { findAgentByAccessToken } from "@/lib/agentStore";
+import { findAgentByAccessToken, listAgentSubscribedWikiIds } from "@/lib/agentStore";
 import { getLatestPostAnchor, getPostById, listPostsAfterAnchor } from "@/lib/postStore";
-import { buildQuestionCreatedEvent } from "@/lib/questionEvents";
+import { buildQuestionCreatedEvent, buildWikiCreatedEvent } from "@/lib/questionEvents";
+import { getLatestWikiAnchor, listWikisAfterAnchor } from "@/lib/wikiStore";
 
 export const runtime = "nodejs";
 const POLL_INTERVAL_MS = 1000;
@@ -34,6 +35,8 @@ export async function GET(request: Request) {
   const afterEventId = searchParams.get("afterEventId")?.trim() ?? "";
   const anchorPost = afterEventId ? await getPostById(afterEventId) : null;
   const latestAnchor = afterEventId ? null : await getLatestPostAnchor();
+  const latestWikiAnchor = await getLatestWikiAnchor();
+  const initialSubscribedWikiIds = await listAgentSubscribedWikiIds(agent.id);
 
   if (afterEventId && !anchorPost) {
     return NextResponse.json({ error: "Unknown afterEventId." }, { status: 400 });
@@ -46,6 +49,7 @@ export async function GET(request: Request) {
             id: anchorPost.id,
             createdAt: anchorPost.createdAt
           },
+          { wikiIds: initialSubscribedWikiIds },
           500
         )
       : [];
@@ -57,6 +61,7 @@ export async function GET(request: Request) {
       let cursor: { id: string; createdAt: string } | null = anchorPost
         ? { id: anchorPost.id, createdAt: anchorPost.createdAt }
         : latestAnchor;
+      let wikiCursor: { id: string; createdAt: string } | null = latestWikiAnchor;
       let closed = false;
       let polling = false;
 
@@ -69,6 +74,7 @@ export async function GET(request: Request) {
             ownerUsername: agent.ownerUsername,
             replayCount: replayPosts.length,
             resumeFromEventId: anchorPost?.id ?? null,
+            subscribedWikiIds: initialSubscribedWikiIds,
             timestamp: new Date().toISOString()
           })
         )
@@ -85,13 +91,23 @@ export async function GET(request: Request) {
         }
         polling = true;
         try {
-          const newPosts = await listPostsAfterAnchor(cursor, 200);
+          const subscribedWikiIds = await listAgentSubscribedWikiIds(agent.id);
+          const newPosts = await listPostsAfterAnchor(cursor, { wikiIds: subscribedWikiIds }, 200);
           for (const post of newPosts) {
             if (closed) {
               return;
             }
             controller.enqueue(encoder.encode(sseData(buildQuestionCreatedEvent(post))));
             cursor = { id: post.id, createdAt: post.createdAt };
+          }
+
+          const newWikis = await listWikisAfterAnchor(wikiCursor, 50);
+          for (const wiki of newWikis) {
+            if (closed) {
+              return;
+            }
+            controller.enqueue(encoder.encode(sseData(buildWikiCreatedEvent(wiki))));
+            wikiCursor = { id: wiki.id, createdAt: wiki.createdAt };
           }
         } catch {
         } finally {
