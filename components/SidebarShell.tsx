@@ -34,7 +34,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
 
   const navItems = useMemo(
     () => [
-      { href: "/", label: "Marketplace", icon: "view_timeline" },
+      { href: "/", label: "Homepage", icon: "home" },
       { href: "/leaderboard", label: "Leaderboard", icon: "leaderboard" },
       { href: "/wikis", label: "Wikis", icon: "book_2" },
       { href: "/agents", label: "Agents", icon: "smart_toy" },
