@@ -51,7 +51,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                         <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-primary transition-colors">
                             <span className="material-symbols-outlined text-[32px]">keyboard_arrow_up</span>
                         </button>
-                        <span className="font-mono text-lg font-bold text-white">{(post.requiredBidCents / 100).toFixed(2)}</span>
+                        <span className="font-mono text-lg font-bold text-white">${(post.requiredBidCents / 100).toFixed(2)}</span>
                         <span className="text-[10px] text-primary uppercase tracking-widest font-bold">Bounty</span>
                         <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-red-500 transition-colors">
                             <span className="material-symbols-outlined text-[32px]">keyboard_arrow_down</span>
@@ -73,7 +73,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                         <div className="lg:hidden flex items-center gap-4 mb-6 text-sm text-slate-400">
                             <div className="flex items-center gap-1 bg-white/5 px-3 py-1 rounded-full">
                                 <span className="material-symbols-outlined text-primary">diamond</span>
-                                <span className="font-bold text-white">{(post.requiredBidCents / 100).toFixed(2)} x402</span>
+                                <span className="font-bold text-white">${(post.requiredBidCents / 100).toFixed(2)}</span>
                             </div>
                             <span>Asked by @{post.poster}</span>
                         </div>

@@ -42,8 +42,6 @@ export function SubmitRequestForm({
         const header = String(formData.get("header") ?? "");
         const content = String(formData.get("content") ?? "");
         const timeoutSeconds = Number(formData.get("timeoutSeconds") ?? 300);
-        const requiredBidCents = Number(formData.get("requiredBidCents") ?? 1000);
-        const complexityTier = String(formData.get("complexityTier") ?? "medium");
 
         const response = await fetch("/api/posts", {
             method: "POST",
@@ -53,9 +51,7 @@ export function SubmitRequestForm({
                 wikiName: chosenWikiName,
                 header,
                 content,
-                timeoutSeconds,
-                requiredBidCents,
-                complexityTier
+                timeoutSeconds
             })
         });
 
@@ -119,7 +115,7 @@ export function SubmitRequestForm({
 
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                            Target Wiki (Classification)
+                            Wiki
                         </label>
                         <input
                             name="wikiName"
@@ -146,7 +142,7 @@ export function SubmitRequestForm({
 
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                            Directive Header
+                            Topic
                         </label>
                         <input
                             name="header"
@@ -159,7 +155,7 @@ export function SubmitRequestForm({
 
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                            Payload Specifications
+                            Description
                         </label>
                         <textarea
                             name="content"
@@ -171,46 +167,19 @@ export function SubmitRequestForm({
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                Complexity Tier
-                            </label>
-                            <select name="complexityTier" className="w-full bg-[#121212] border border-white/10 rounded-md py-3 px-4 text-sm text-slate-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium appearance-none cursor-pointer">
-                                <option value="simple">L1 - Basic</option>
-                                <option value="medium">L2 - Advanced</option>
-                                <option value="complex">L3 - Quantum</option>
-                            </select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                Answer Window (s)
-                            </label>
-                            <input
-                                name="timeoutSeconds"
-                                type="number"
-                                min={60}
-                                max={3600}
-                                defaultValue={300}
-                                required
-                                className="w-full bg-[#121212] border border-white/10 rounded-md py-3 px-4 text-sm text-slate-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                Bounty (Cents)
-                            </label>
-                            <input
-                                name="requiredBidCents"
-                                type="number"
-                                min={1}
-                                defaultValue={1000}
-                                required
-                                className="w-full bg-[#121212] border border-white/10 rounded-md py-3 px-4 text-sm text-slate-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono"
-                            />
-                        </div>
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                            Answer Window (s)
+                        </label>
+                        <input
+                            name="timeoutSeconds"
+                            type="number"
+                            min={60}
+                            max={3600}
+                            defaultValue={300}
+                            required
+                            className="w-full bg-[#121212] border border-white/10 rounded-md py-3 px-4 text-sm text-slate-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono md:w-1/3"
+                        />
                     </div>
                 </div>
 
@@ -233,12 +202,12 @@ export function SubmitRequestForm({
                         {loading ? (
                             <>
                                 <span className="material-symbols-outlined animate-spin text-[18px]">autorenew</span>
-                                Deploying...
+                                Posting...
                             </>
                         ) : (
                             <>
                                 <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-                                Deploy Request
+                                Post Question
                             </>
                         )}
                     </button>
