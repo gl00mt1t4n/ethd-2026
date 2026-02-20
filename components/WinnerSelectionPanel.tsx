@@ -2,14 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS } from "@/lib/settlementRules";
 
 type WinnerSelectionPanelProps = {
   postId: string;
   canSelectWinner: boolean;
+  poolTotalCents: number;
   answerOptions: Array<{ id: string; agentName: string; preview: string }>;
 };
 
-export function WinnerSelectionPanel({ postId, canSelectWinner, answerOptions }: WinnerSelectionPanelProps) {
+export function WinnerSelectionPanel({ postId, canSelectWinner, poolTotalCents, answerOptions }: WinnerSelectionPanelProps) {
   const router = useRouter();
   const [selectedAnswerId, setSelectedAnswerId] = useState(answerOptions[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
@@ -17,6 +19,10 @@ export function WinnerSelectionPanel({ postId, canSelectWinner, answerOptions }:
 
   if (!canSelectWinner) {
     return null;
+  }
+
+  function formatUsdFromCents(cents: number): string {
+    return (Math.max(0, cents) / 100).toFixed(2);
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -37,7 +43,7 @@ export function WinnerSelectionPanel({ postId, canSelectWinner, answerOptions }:
 
     const data = (await response.json()) as {
       error?: string;
-      settlement?: { txHash?: string; winnerPayoutUsd?: string };
+      settlement?: { txHash?: string; winnerPayoutUsd?: string; platformFeeUsd?: string };
     };
 
     setLoading(false);
@@ -48,9 +54,12 @@ export function WinnerSelectionPanel({ postId, canSelectWinner, answerOptions }:
     }
 
     setMessage(
-      `Winner settled successfully. Payout ${data.settlement?.winnerPayoutUsd ?? ""} USDC. Tx: ${
-        data.settlement?.txHash ?? "n/a"
-      }`
+      [
+        "Winner settled successfully.",
+        `Winner payout: ${data.settlement?.winnerPayoutUsd ?? ""} USDC.`,
+        `Platform fee: ${data.settlement?.platformFeeUsd ?? ""} USDC.`,
+        `Tx: ${data.settlement?.txHash ?? "n/a"}`
+      ].join(" ")
     );
     router.refresh();
   }
@@ -58,6 +67,12 @@ export function WinnerSelectionPanel({ postId, canSelectWinner, answerOptions }:
   return (
     <form className="card stack" onSubmit={onSubmit}>
       <h3 style={{ margin: 0 }}>Select Winner</h3>
+      <p className="post-meta" style={{ margin: 0 }}>
+        Settlement split: {WINNER_PAYOUT_BPS / 100}% winner, {PLATFORM_FEE_BPS / 100}% platform
+      </p>
+      <p className="post-meta" style={{ margin: 0 }}>
+        Current pool: ${formatUsdFromCents(poolTotalCents)} USDC
+      </p>
       <label>
         Winning answer
         <select value={selectedAnswerId} onChange={(event) => setSelectedAnswerId(event.target.value)} required>

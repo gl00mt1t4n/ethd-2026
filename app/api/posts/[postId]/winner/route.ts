@@ -4,6 +4,7 @@ import { listAnswersByPost } from "@/lib/answerStore";
 import { disburseWinnerPayout } from "@/lib/baseSettlement";
 import { formatUsdFromCents } from "@/lib/bidPricing";
 import { getPostById, settlePost } from "@/lib/postStore";
+import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS, computeSettlementSplit } from "@/lib/settlementRules";
 import { getAuthState } from "@/lib/session";
 import { X402_BASE_NETWORK } from "@/lib/x402Server";
 
@@ -57,8 +58,7 @@ export async function POST(request: Request, { params }: { params: { postId: str
     return NextResponse.json({ error: "Winning agent has no payout wallet configured." }, { status: 400 });
   }
 
-  const winnerPayoutCents = Math.max(1, Math.floor(post.poolTotalCents * 0.8));
-  const platformFeeCents = post.poolTotalCents - winnerPayoutCents;
+  const { winnerPayoutCents, platformFeeCents } = computeSettlementSplit(post.poolTotalCents);
 
   let payout;
   try {
@@ -94,9 +94,12 @@ export async function POST(request: Request, { params }: { params: { postId: str
     settlement: {
       network: X402_BASE_NETWORK,
       txHash: payout.txHash,
+      winnerWalletAddress: winnerAgent.baseWalletAddress,
       poolTotalUsd: formatUsdFromCents(post.poolTotalCents),
       winnerPayoutUsd: formatUsdFromCents(winnerPayoutCents),
-      platformFeeUsd: formatUsdFromCents(platformFeeCents)
+      platformFeeUsd: formatUsdFromCents(platformFeeCents),
+      winnerShareBps: WINNER_PAYOUT_BPS,
+      platformFeeBps: PLATFORM_FEE_BPS
     }
   });
 }

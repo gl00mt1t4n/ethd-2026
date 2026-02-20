@@ -24,6 +24,95 @@ function clampScore(value: number): number {
   return Math.min(5, Math.max(1, Math.round(value)));
 }
 
+function tierFromScore(score: number): ComplexityTier {
+  if (score <= 2) {
+    return "simple";
+  }
+  if (score >= 4) {
+    return "complex";
+  }
+  return "medium";
+}
+
+function tierToScoreCenter(tier: ComplexityTier): number {
+  if (tier === "simple") {
+    return 2;
+  }
+  if (tier === "complex") {
+    return 4;
+  }
+  return 3;
+}
+
+function lexicalComplexityScore(header: string, content: string): number {
+  const text = `${header}\n${content}`.trim();
+  const lower = text.toLowerCase();
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+
+  let score = 2;
+
+  if (wordCount >= 40) {
+    score += 1;
+  }
+  if (wordCount >= 120) {
+    score += 1;
+  }
+
+  const complexSignals = [
+    /\btrade[- ]?off\b/g,
+    /\barchitecture\b/g,
+    /\bdesign\b/g,
+    /\boptimi[sz]e\b/g,
+    /\bdebug\b/g,
+    /\bintegrat(e|ion)\b/g,
+    /\bmigrat(e|ion)\b/g,
+    /\bsecurity\b/g,
+    /\bperformance\b/g,
+    /\bscal(e|ability)\b/g,
+    /\bmulti[- ]step\b/g,
+    /\bdistributed\b/g,
+    /\bconsensus\b/g,
+    /\bcross[- ]chain\b/g,
+    /\bsmart contract\b/g,
+    /\bprisma\b/g,
+    /\bsupabase\b/g,
+    /\bnext\.?js\b/g
+  ];
+
+  const simpleSignals = [
+    /^\s*what is\b/gm,
+    /^\s*define\b/gm,
+    /^\s*when is\b/gm,
+    /^\s*where is\b/gm,
+    /^\s*who is\b/gm
+  ];
+
+  let complexHits = 0;
+  for (const pattern of complexSignals) {
+    complexHits += (lower.match(pattern) ?? []).length;
+  }
+  if (complexHits >= 2) {
+    score += 1;
+  }
+  if (complexHits >= 5) {
+    score += 1;
+  }
+
+  let simpleHits = 0;
+  for (const pattern of simpleSignals) {
+    simpleHits += (lower.match(pattern) ?? []).length;
+  }
+  if (simpleHits > 0 && wordCount <= 25) {
+    score -= 1;
+  }
+
+  if (lower.includes("```") || lower.includes("error:") || lower.includes("stack trace")) {
+    score += 1;
+  }
+
+  return clampScore(score);
+}
+
 function extractFirstJsonObject(text: string): string | null {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
@@ -33,16 +122,18 @@ function extractFirstJsonObject(text: string): string | null {
   return text.slice(start, end + 1);
 }
 
-function fallbackClassification(): {
+function fallbackClassification(input: { header: string; content: string }): {
   complexityTier: ComplexityTier;
   complexityScore: number;
   requiredBidCents: number;
   classifierModel: string | null;
 } {
+  const complexityScore = lexicalComplexityScore(input.header, input.content);
+  const complexityTier = tierFromScore(complexityScore);
   return {
-    complexityTier: DEFAULT_TIER,
-    complexityScore: DEFAULT_COMPLEXITY_SCORE,
-    requiredBidCents: BID_CENTS_BY_TIER[DEFAULT_TIER],
+    complexityTier,
+    complexityScore,
+    requiredBidCents: BID_CENTS_BY_TIER[complexityTier],
     classifierModel: null
   };
 }
@@ -63,9 +154,10 @@ export async function classifyQuestionPricing(input: {
   const apiKey = (process.env.OPENAI_API_KEY ?? "").trim();
   const model = (process.env.BID_CLASSIFIER_MODEL ?? "gpt-4o-mini").trim();
   const baseUrl = (process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1").trim();
+  const heuristicScore = lexicalComplexityScore(input.header, input.content);
 
   if (!apiKey) {
-    return fallbackClassification();
+    return fallbackClassification(input);
   }
 
   try {
@@ -82,7 +174,16 @@ export async function classifyQuestionPricing(input: {
           {
             role: "system",
             content:
-              "Classify question complexity for pricing. Output only compact JSON: {\"tier\":\"simple|medium|complex\",\"score\":1-5}."
+              [
+                "You classify question complexity for marketplace pricing.",
+                "Return strict JSON only with keys: tier, score.",
+                "tier must be one of simple|medium|complex.",
+                "score must be integer 1..5.",
+                "Use this rubric:",
+                "- simple (1-2): direct factual query, little reasoning/tooling.",
+                "- medium (3): moderate reasoning and synthesis.",
+                "- complex (4-5): multi-step analysis, system design, deep debugging, or heavy synthesis."
+              ].join(" ")
           },
           {
             role: "user",
@@ -102,7 +203,7 @@ export async function classifyQuestionPricing(input: {
     });
 
     if (!response.ok) {
-      return fallbackClassification();
+      return fallbackClassification(input);
     }
 
     const data = (await response.json()) as {
@@ -112,12 +213,18 @@ export async function classifyQuestionPricing(input: {
     const rawText = String(data.choices?.[0]?.message?.content ?? "").trim();
     const rawJson = extractFirstJsonObject(rawText);
     if (!rawJson) {
-      return fallbackClassification();
+      return fallbackClassification(input);
     }
 
     const parsed = JSON.parse(rawJson) as { tier?: string; score?: number };
-    const complexityTier = normalizeTier(String(parsed.tier ?? DEFAULT_TIER));
-    const complexityScore = clampScore(Number(parsed.score ?? DEFAULT_COMPLEXITY_SCORE));
+    const llmTier = normalizeTier(String(parsed.tier ?? DEFAULT_TIER));
+    const llmScoreFromTier = tierToScoreCenter(llmTier);
+    const llmScore = clampScore(Number(parsed.score ?? llmScoreFromTier));
+
+    const drift = Math.abs(llmScore - heuristicScore);
+    const mergedScore = clampScore(drift >= 3 ? Math.round((llmScore + heuristicScore) / 2) : llmScore);
+    const complexityScore = mergedScore;
+    const complexityTier = tierFromScore(mergedScore);
 
     return {
       complexityTier,
@@ -126,6 +233,6 @@ export async function classifyQuestionPricing(input: {
       classifierModel: model
     };
   } catch {
-    return fallbackClassification();
+    return fallbackClassification(input);
   }
 }

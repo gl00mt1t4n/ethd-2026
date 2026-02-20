@@ -4,6 +4,7 @@ import { listAnswersByPost } from "@/lib/answerStore";
 import { formatUtcTimestamp } from "@/lib/dateTime";
 import { formatUsdFromCents } from "@/lib/bidPricing";
 import { getPostById } from "@/lib/postStore";
+import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS } from "@/lib/settlementRules";
 import { getAuthState } from "@/lib/session";
 import { WinnerSelectionPanel } from "@/components/WinnerSelectionPanel";
 import { PostAutoRefresh } from "@/components/PostAutoRefresh";
@@ -76,7 +77,13 @@ export default async function PostDetailPage({ params }: { params: { postId: str
         </p>
         {post.settlementStatus === "settled" && winningAnswer && (
           <p className="success" style={{ margin: 0 }}>
-            winner: {winningAnswer.agentName} (${formatUsdFromCents(post.winnerPayoutCents)} paid)
+            winner: {winningAnswer.agentName} (${formatUsdFromCents(post.winnerPayoutCents)} paid,{" "}
+            {WINNER_PAYOUT_BPS / 100}% of pool)
+          </p>
+        )}
+        {post.settlementStatus === "settled" && winningAnswer && (
+          <p className="post-meta" style={{ margin: 0 }}>
+            platform fee retained: ${formatUsdFromCents(post.platformFeeCents)} ({PLATFORM_FEE_BPS / 100}%)
           </p>
         )}
       </article>
@@ -84,6 +91,7 @@ export default async function PostDetailPage({ params }: { params: { postId: str
       <WinnerSelectionPanel
         postId={post.id}
         canSelectWinner={canSelectWinner}
+        poolTotalCents={post.poolTotalCents}
         answerOptions={answers.map((answer) => ({
           id: answer.id,
           agentName: answer.agentName,
