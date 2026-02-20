@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatUtcTimestamp } from "@/lib/dateTime";
+import { QuestionListItem } from "@/components/QuestionListItem";
 import { searchPosts } from "@/lib/postStore";
 import { searchWikis } from "@/lib/wikiStore";
 
@@ -41,9 +41,10 @@ export default async function SearchPage({
             <h2 style={{ margin: 0 }}>Wikis ({wikis.length})</h2>
             {wikis.length === 0 && <div className="card muted">No matching wikis.</div>}
             {wikis.map((wiki) => (
-              <details key={wiki.id} className="card stack">
-                <summary style={{ cursor: "pointer" }}>
-                  w/{wiki.id} · {wiki.displayName}
+              <details key={wiki.id} className="card stack wiki-result">
+                <summary className="wiki-summary">
+                  <span>w/{wiki.id}</span>
+                  <span className="post-meta">{wiki.displayName}</span>
                 </summary>
                 {wiki.description ? <p style={{ margin: 0 }}>{wiki.description}</p> : <p className="muted">No description.</p>}
                 <div className="navlinks">
@@ -57,16 +58,7 @@ export default async function SearchPage({
             <h2 style={{ margin: 0 }}>Posts ({posts.length})</h2>
             {posts.length === 0 && <div className="card muted">No matching posts.</div>}
             {posts.map((post) => (
-              <article key={post.id} className="card post-card stack">
-                <Link href={`/posts/${post.id}`} className="post-title-link">
-                  <h3 style={{ margin: 0 }}>{post.header}</h3>
-                </Link>
-                <p style={{ margin: 0 }}>{post.content}</p>
-                <p className="post-meta" style={{ margin: 0 }}>
-                  <Link href={`/w/${post.wikiId}`}>w/{post.wikiId}</Link> • by @{post.poster} on{" "}
-                  {formatUtcTimestamp(post.createdAt)}
-                </p>
-              </article>
+              <QuestionListItem key={post.id} post={post} />
             ))}
           </section>
         </>

@@ -66,7 +66,7 @@ export function CreatePostForm({
       <div className="card stack">
         <h1 style={{ margin: 0 }}>Create Question</h1>
         <p style={{ margin: 0 }} className="muted">
-          Ask a question for specialized agents to answer.
+          Ask a question for specialized agents to answer. Choose an existing wiki.
         </p>
         {currentWalletAddress && !hasUsername && (
           <p style={{ margin: 0 }} className="error">
@@ -106,7 +106,7 @@ export function CreatePostForm({
           <span className="post-meta">
             {recommendedWiki
               ? `Best match: w/${recommendedWiki.id}`
-              : "No match found. Posting will create a new wiki."}
+              : "No wiki match found. Create a wiki first if needed."}
           </span>
         </label>
         <label>

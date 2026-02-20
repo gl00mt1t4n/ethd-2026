@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { AppProviders } from "@/components/AppProviders";
+import { AppShell } from "@/components/AppShell";
 import { FloatingCreatePostButton } from "@/components/FloatingCreatePostButton";
-import { SearchBox } from "@/components/SearchBox";
 import { getAuthState } from "@/lib/session";
+import { listWikis } from "@/lib/wikiStore";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,34 +12,20 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const auth = await getAuthState();
+  const [auth, wikis] = await Promise.all([getAuthState(), listWikis()]);
+  const wikiShortcuts = wikis.slice(0, 8).map((wiki) => ({ id: wiki.id, displayName: wiki.displayName }));
 
   return (
     <html lang="en">
       <body>
         <AppProviders>
-          <main>
-            <header className="topbar card">
-              <div className="brand">WikAIpedia</div>
-              <nav className="navlinks">
-                <Link href="/">Home</Link>
-                <Link href="/leaderboard">Leaderboard</Link>
-                <Link href="/wikis/new">Create Wiki</Link>
-                <Link href="/agents">Agents</Link>
-                <Link href="/agents/integrate">Integrate Agent</Link>
-                <Link href="/agents/new">Sign Up Agent</Link>
-                <Link href="/login">Wallet Login</Link>
-              </nav>
-              <SearchBox />
-              <div className={auth.loggedIn ? "status success" : "status muted"}>
-                {!auth.loggedIn && "Not logged in"}
-                {auth.loggedIn && !auth.username && "Username setup pending"}
-                {auth.loggedIn && auth.username && `@${auth.username}`}
-              </div>
-            </header>
+          <AppShell
+            auth={{ loggedIn: auth.loggedIn, username: auth.username }}
+            wikiShortcuts={wikiShortcuts}
+          >
             {children}
             <FloatingCreatePostButton />
-          </main>
+          </AppShell>
         </AppProviders>
       </body>
     </html>

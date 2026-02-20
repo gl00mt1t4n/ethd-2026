@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AnswerCard } from "@/components/AnswerCard";
 import { listAnswersByPost } from "@/lib/answerStore";
 import { formatUtcTimestamp } from "@/lib/dateTime";
 import { formatUsdFromCents } from "@/lib/bidPricing";
@@ -8,32 +9,10 @@ import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS } from "@/lib/settlementRules";
 import { getAuthState } from "@/lib/session";
 import { WinnerSelectionPanel } from "@/components/WinnerSelectionPanel";
 import { PostAutoRefresh } from "@/components/PostAutoRefresh";
+import { WikiChip } from "@/components/WikiChip";
+import { WinnerBadge } from "@/components/WinnerBadge";
 
 export const dynamic = "force-dynamic";
-
-function getTxExplorerUrl(network: string, txHash: string | null): string | null {
-  if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
-    return null;
-  }
-
-  if (network === "eip155:8453") {
-    return `https://basescan.org/tx/${txHash}`;
-  }
-
-  if (network === "eip155:84532") {
-    return `https://sepolia.basescan.org/tx/${txHash}`;
-  }
-
-  return null;
-}
-
-function getX402ScanUrl(txHash: string | null): string | null {
-  if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
-    return null;
-  }
-
-  return `https://www.x402scan.com/transactions?search=${encodeURIComponent(txHash)}`;
-}
 
 export default async function PostDetailPage({ params }: { params: { postId: string } }) {
   const [post, answers, auth] = await Promise.all([
@@ -68,14 +47,12 @@ export default async function PostDetailPage({ params }: { params: { postId: str
   return (
     <section className="stack">
       <article className="card post-card stack">
-        <h1 style={{ margin: 0 }}>{post.header}</h1>
-        <p style={{ margin: 0 }}>{post.content}</p>
-        <p className="post-meta" style={{ margin: 0 }}>
-          in <Link href={`/w/${post.wikiId}`}>w/{post.wikiId}</Link>
-        </p>
-        <p className="post-meta" style={{ margin: 0 }}>
-          posted by @{post.poster} on {formatUtcTimestamp(post.createdAt)}
-        </p>
+        <div className="row-between">
+          <h1 style={{ margin: 0 }}>{post.header}</h1>
+          <WikiChip wikiId={post.wikiId} />
+        </div>
+        <p className="question-excerpt">{post.content}</p>
+        <p className="post-meta">posted by @{post.poster} on {formatUtcTimestamp(post.createdAt)}</p>
         <p className="post-meta" style={{ margin: 0 }}>
           answer window closes at {formatUtcTimestamp(post.answersCloseAt)} ({post.answerWindowSeconds}s)
         </p>
@@ -91,7 +68,7 @@ export default async function PostDetailPage({ params }: { params: { postId: str
         </p>
         {post.settlementStatus === "settled" && winningAnswer && (
           <p className="success" style={{ margin: 0 }}>
-            winner: {winningAnswer.agentName} (${formatUsdFromCents(post.winnerPayoutCents)} paid,{" "}
+            <WinnerBadge label="Accepted Winner" /> {winningAnswer.agentName} (${formatUsdFromCents(post.winnerPayoutCents)} paid,{" "}
             {WINNER_PAYOUT_BPS / 100}% of pool)
           </p>
         )}
@@ -122,39 +99,9 @@ export default async function PostDetailPage({ params }: { params: { postId: str
             Waiting for agent responses...
           </p>
         )}
-        {answers.map((answer) => {
-          const txHash = answer.paymentTxHash;
-          const txUrl = getTxExplorerUrl(answer.paymentNetwork, answer.paymentTxHash);
-          const x402scanUrl = getX402ScanUrl(answer.paymentTxHash);
-          const shortTx = txHash ? `${txHash.slice(0, 10)}...${txHash.slice(-8)}` : null;
-          return (
-            <article key={answer.id} className="answer-card stack">
-              <p style={{ margin: 0 }}>{answer.content}</p>
-              <p className="post-meta" style={{ margin: 0 }}>
-                by agent <strong>{answer.agentName}</strong> at {formatUtcTimestamp(answer.createdAt)} • bid $
-                {formatUsdFromCents(answer.bidAmountCents)}
-                {txUrl ? (
-                  <>
-                    {" "}
-                    •{" "}
-                    <a href={txUrl} target="_blank" rel="noreferrer">
-                      tx: {shortTx}
-                    </a>
-                  </>
-                ) : null}
-                {x402scanUrl ? (
-                  <>
-                    {" "}
-                    •{" "}
-                    <a href={x402scanUrl} target="_blank" rel="noreferrer">
-                      x402scan
-                    </a>
-                  </>
-                ) : null}
-              </p>
-            </article>
-          );
-        })}
+        {answers.map((answer) => (
+          <AnswerCard key={answer.id} answer={answer} isWinner={answer.id === post.winnerAnswerId} />
+        ))}
         <div className="navlinks">
           <Link href="/">Back to Home Feed</Link>
         </div>

@@ -13,6 +13,7 @@ export function SearchBox() {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [suggestions, setSuggestions] = useState<WikiSuggestion[]>([]);
+  const [open, setOpen] = useState(false);
 
   const trimmedQuery = useMemo(() => query.trim(), [query]);
 
@@ -37,9 +38,11 @@ export function SearchBox() {
           return;
         }
         setSuggestions(Array.isArray(data.wikis) ? data.wikis : []);
+        setOpen(true);
       } catch {
         if (!cancelled) {
           setSuggestions([]);
+          setOpen(false);
         }
       }
     }, 150);
@@ -56,25 +59,43 @@ export function SearchBox() {
     if (!q) {
       return;
     }
+    setOpen(false);
     router.push(`/search?q=${encodeURIComponent(q)}`);
   }
 
   return (
-    <form onSubmit={onSubmit} className="search-box">
+    <form onSubmit={onSubmit} className="search-box" role="search">
       <input
         name="q"
-        list="wiki-search-suggestions"
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setOpen(true);
+        }}
+        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        onFocus={() => setOpen(true)}
         placeholder="Search posts or wikis"
+        aria-label="Search posts or wikis"
+        autoComplete="off"
       />
-      <datalist id="wiki-search-suggestions">
-        {suggestions.map((wiki) => (
-          <option key={wiki.id} value={`w/${wiki.id}`}>
-            {wiki.displayName}
-          </option>
-        ))}
-      </datalist>
+      {open && suggestions.length > 0 && (
+        <div className="search-suggestions" role="listbox" aria-label="Wiki suggestions">
+          {suggestions.map((wiki) => (
+            <button
+              key={wiki.id}
+              type="button"
+              className="suggestion-item"
+              onClick={() => {
+                setQuery(`w/${wiki.id}`);
+                setOpen(false);
+              }}
+            >
+              <span className="suggestion-main">w/{wiki.id}</span>
+              <span className="suggestion-sub">{wiki.displayName}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <button type="submit">Search</button>
     </form>
   );
