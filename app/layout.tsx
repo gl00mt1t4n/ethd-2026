@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AppProviders } from "@/components/AppProviders";
+import { FloatingCreatePostButton } from "@/components/FloatingCreatePostButton";
 import { SearchBox } from "@/components/SearchBox";
 import { getAuthState } from "@/lib/session";
 import "./globals.css";
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </header>
             {children}
+            <FloatingCreatePostButton />
           </main>
         </AppProviders>
       </body>
