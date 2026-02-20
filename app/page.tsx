@@ -24,7 +24,7 @@ export default async function LiveRequestsDashboard() {
             No active questions found.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="homepage-card-grid grid grid-cols-1 md:grid-cols-2">
             {posts.map((post) => {
               const isQuantum = post.complexityTier === "complex";
               const isAdvanced = post.complexityTier === "medium";
@@ -41,8 +41,8 @@ export default async function LiveRequestsDashboard() {
 
               return (
                 <Link href={`/question/${post.id}`} key={post.id} className="homepage-card-wrap block h-full">
-                  <article className="homepage-card relative h-full overflow-hidden rounded-lg border border-white/10 bg-[#0a0a0a] p-4 transition-colors hover:border-white/20">
-                    <div className="homepage-card-accent pointer-events-none absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-primary via-primary/70 to-transparent" />
+                  <article className="homepage-card relative h-full overflow-hidden rounded-none bg-[#0a0a0a] p-4">
+                    <div className="homepage-card-accent pointer-events-none absolute left-0 top-0 w-full bg-gradient-to-r from-primary via-primary/70 to-transparent" />
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] leading-none ${levelColorClass}`}>
                         {levelLabel}

@@ -47,19 +47,22 @@
     mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
   }
 
+  .homepage-card-grid {
+    gap: 1px;
+    background: rgba(255, 77, 0, 0.55);
+  }
+
   .homepage-card-wrap {
     position: relative;
-    padding-block: 6px;
-    margin-block: -6px;
     perspective: 1000px;
     transform-style: preserve-3d;
   }
 
   .homepage-card {
     transform-style: preserve-3d;
-    transform: rotateX(1deg) rotateY(-1deg) translateY(-1px) scale(1.005);
-    transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+    transform: rotateX(0.5deg) rotateY(-0.5deg) scale(1.002);
+    transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+    box-shadow: none;
   }
 
   .homepage-card::before,
@@ -84,15 +87,16 @@
   }
 
   .homepage-card-accent {
-    opacity: 0.25;
-    transition: opacity 220ms ease;
+    height: 1px;
+    z-index: 20;
+    opacity: 1;
+    transition: opacity 180ms ease, height 180ms ease;
   }
 
   .homepage-card-wrap:hover .homepage-card,
   .homepage-card:hover {
-    transform: rotateY(5deg) rotateX(4deg) translateY(-6px) scale(1.03);
-    box-shadow: 0 22px 42px rgba(0, 0, 0, 0.34);
-    border-color: rgba(255, 77, 0, 0.45);
+    transform: rotateY(3deg) rotateX(2deg) scale(1.01);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.26);
     background-color: #0b0908;
   }
 
@@ -110,7 +114,8 @@
 
   .homepage-card-wrap:hover .homepage-card .homepage-card-accent,
   .homepage-card:hover .homepage-card-accent {
-    opacity: 0.95;
+    opacity: 1;
+    height: 4px;
   }
 
   @media (prefers-reduced-motion: reduce) {
