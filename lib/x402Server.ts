@@ -11,7 +11,7 @@ import { registerExactEvmScheme } from "@x402/evm/exact/server";
 import { NextResponse } from "next/server";
 
 const FACILITATOR_URL = process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator";
-export const X402_BASE_NETWORK = (process.env.X402_BASE_NETWORK ?? "eip155:8453") as Network;
+export const X402_BASE_NETWORK = (process.env.X402_BASE_NETWORK ?? "eip155:84532") as Network;
 
 const facilitator = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
 const resourceServer = new x402ResourceServer(facilitator);

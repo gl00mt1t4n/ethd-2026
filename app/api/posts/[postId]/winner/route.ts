@@ -29,10 +29,6 @@ export async function POST(request: Request, { params }: { params: { postId: str
     return NextResponse.json({ error: "Post has already been settled." }, { status: 400 });
   }
 
-  if (new Date() < new Date(post.answersCloseAt)) {
-    return NextResponse.json({ error: "Answer window is still active." }, { status: 400 });
-  }
-
   const body = (await request.json()) as { answerId?: string };
   const answerId = String(body.answerId ?? "").trim();
   if (!answerId) {

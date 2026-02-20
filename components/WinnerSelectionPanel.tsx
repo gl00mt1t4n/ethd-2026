@@ -7,18 +7,40 @@ import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS } from "@/lib/settlementRules";
 type WinnerSelectionPanelProps = {
   postId: string;
   canSelectWinner: boolean;
+  blockedReason?: string;
   poolTotalCents: number;
   answerOptions: Array<{ id: string; agentName: string; preview: string }>;
 };
 
-export function WinnerSelectionPanel({ postId, canSelectWinner, poolTotalCents, answerOptions }: WinnerSelectionPanelProps) {
+export function WinnerSelectionPanel({
+  postId,
+  canSelectWinner,
+  blockedReason,
+  poolTotalCents,
+  answerOptions
+}: WinnerSelectionPanelProps) {
   const router = useRouter();
   const [selectedAnswerId, setSelectedAnswerId] = useState(answerOptions[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   if (!canSelectWinner) {
-    return null;
+    return (
+      <section className="card stack">
+        <h3 style={{ margin: 0 }}>Select Winner</h3>
+      <p className="post-meta" style={{ margin: 0 }}>
+        Settlement split: {WINNER_PAYOUT_BPS / 100}% winner, {PLATFORM_FEE_BPS / 100}% platform
+      </p>
+      <p className="post-meta" style={{ margin: 0 }}>
+        Selecting a winner settles and closes this post immediately.
+      </p>
+      {blockedReason ? (
+        <p className="muted" style={{ margin: 0 }}>
+          {blockedReason}
+          </p>
+        ) : null}
+      </section>
+    );
   }
 
   function formatUsdFromCents(cents: number): string {
@@ -69,6 +91,9 @@ export function WinnerSelectionPanel({ postId, canSelectWinner, poolTotalCents, 
       <h3 style={{ margin: 0 }}>Select Winner</h3>
       <p className="post-meta" style={{ margin: 0 }}>
         Settlement split: {WINNER_PAYOUT_BPS / 100}% winner, {PLATFORM_FEE_BPS / 100}% platform
+      </p>
+      <p className="post-meta" style={{ margin: 0 }}>
+        Selecting a winner settles and closes this post immediately.
       </p>
       <p className="post-meta" style={{ margin: 0 }}>
         Current pool: ${formatUsdFromCents(poolTotalCents)} USDC

@@ -34,6 +34,14 @@ function getIdToken(request: Request, bodyToken?: string): string {
   return String(bodyToken ?? "").trim();
 }
 
+function getBearerToken(request: Request): string {
+  const header = request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
+  if (header.toLowerCase().startsWith("bearer ")) {
+    return header.slice(7).trim();
+  }
+  return "";
+}
+
 function isEthereumWalletAccount(
   account: LinkedAccountWithMetadata
 ): account is Extract<LinkedAccountWithMetadata, { type: "wallet" }> {
@@ -50,10 +58,16 @@ function extractWalletAddress(user: User): string | null {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as { idToken?: string };
-  const idToken = getIdToken(request, body.idToken);
+  const body = (await request.json().catch(() => ({}))) as { idToken?: string; accessToken?: string };
+  const bearerToken = getBearerToken(request);
+  const tokenType = (request.headers.get("x-privy-token-type") ?? "").trim().toLowerCase();
+  const bodyIdToken = String(body.idToken ?? "").trim();
+  const bodyAccessToken = String(body.accessToken ?? "").trim();
 
-  if (!idToken) {
+  const idToken = bodyIdToken || (tokenType !== "access" ? bearerToken : "");
+  const accessToken = bodyAccessToken || (tokenType === "access" ? bearerToken : "");
+
+  if (!idToken && !accessToken) {
     return NextResponse.json({ error: "Missing Privy auth token." }, { status: 400 });
   }
 
@@ -65,10 +79,26 @@ export async function POST(request: Request) {
     );
   }
 
-  let user: User;
-  try {
-    user = await client.getUser({ idToken });
-  } catch {
+  let user: User | null = null;
+
+  if (idToken) {
+    try {
+      user = await client.getUser({ idToken });
+    } catch {
+      user = null;
+    }
+  }
+
+  if (!user && accessToken) {
+    try {
+      const claims = await client.verifyAuthToken(accessToken);
+      user = await client.getUser(claims.userId);
+    } catch {
+      user = null;
+    }
+  }
+
+  if (!user) {
     return NextResponse.json({ error: "Invalid Privy auth token." }, { status: 401 });
   }
 

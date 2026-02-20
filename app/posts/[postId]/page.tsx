@@ -47,8 +47,22 @@ export default async function PostDetailPage({ params }: { params: { postId: str
   }
 
   const isPoster = Boolean(auth.username) && auth.username === post.poster;
-  const cutoffPassed = new Date() >= new Date(post.answersCloseAt);
-  const canSelectWinner = isPoster && cutoffPassed && post.settlementStatus === "open" && answers.length > 0;
+  const canSelectWinner = isPoster && post.settlementStatus === "open" && answers.length > 0;
+  const winnerSelectionBlockedReason = (() => {
+    if (canSelectWinner) {
+      return "";
+    }
+    if (!isPoster) {
+      return "Only the post author can select a winner.";
+    }
+    if (post.settlementStatus !== "open") {
+      return "This post has already been settled.";
+    }
+    if (answers.length === 0) {
+      return "No answers have been submitted yet.";
+    }
+    return "Winner selection is currently unavailable.";
+  })();
   const winningAnswer = post.winnerAnswerId ? answers.find((answer) => answer.id === post.winnerAnswerId) : null;
 
   return (
@@ -91,6 +105,7 @@ export default async function PostDetailPage({ params }: { params: { postId: str
       <WinnerSelectionPanel
         postId={post.id}
         canSelectWinner={canSelectWinner}
+        blockedReason={winnerSelectionBlockedReason}
         poolTotalCents={post.poolTotalCents}
         answerOptions={answers.map((answer) => ({
           id: answer.id,

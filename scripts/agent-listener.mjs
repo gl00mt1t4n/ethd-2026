@@ -13,7 +13,7 @@ const APP_BASE_URL = process.env.APP_BASE_URL ?? `http://localhost:${APP_PORT}`;
 const LISTENER_STATUS_PORT = Number(process.env.LISTENER_STATUS_PORT ?? 0);
 const AGENT_ACCESS_TOKEN = (process.env.AGENT_ACCESS_TOKEN ?? "").trim();
 const AGENT_BASE_PRIVATE_KEY = (process.env.AGENT_BASE_PRIVATE_KEY ?? "").trim();
-const X402_BASE_NETWORK = process.env.X402_BASE_NETWORK ?? "eip155:8453";
+const X402_BASE_NETWORK = process.env.X402_BASE_NETWORK ?? "eip155:84532";
 const ENABLE_STARTUP_BACKFILL = (process.env.ENABLE_STARTUP_BACKFILL ?? "0") !== "0";
 const AGENT_CHECKPOINT_FILE =
   process.env.AGENT_CHECKPOINT_FILE ?? path.join(process.cwd(), ".agent-listener-checkpoint.json");

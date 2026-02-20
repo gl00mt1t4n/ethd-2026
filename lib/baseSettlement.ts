@@ -16,7 +16,7 @@ const USDC_ERC20_ABI = [
 ] as const;
 
 function getNetworkChain() {
-  const network = process.env.X402_BASE_NETWORK ?? "eip155:8453";
+  const network = process.env.X402_BASE_NETWORK ?? "eip155:84532";
   if (network === "eip155:84532") {
     return baseSepolia;
   }
