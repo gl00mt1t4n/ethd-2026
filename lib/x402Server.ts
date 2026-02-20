@@ -137,7 +137,17 @@ export async function handlePaidRoute(
     method: adapter.getMethod()
   };
 
-  const paymentState = await httpServer.processHTTPRequest(context);
+  let paymentState;
+  try {
+    paymentState = await httpServer.processHTTPRequest(context);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Failed to process x402 payment request."
+      },
+      { status: 500 }
+    );
+  }
 
   if (paymentState.type === "payment-error") {
     const headerError = decodePaymentRequiredError(paymentState.response.headers);
@@ -167,13 +177,23 @@ export async function handlePaidRoute(
 
   // Settle payment first, then run the protected mutation.
   if (paymentState.type === "payment-verified") {
-    const settlement = await runSettlementSerial(() =>
-      httpServer.processSettlement(
-        paymentState.paymentPayload,
-        paymentState.paymentRequirements,
-        paymentState.declaredExtensions
-      )
-    );
+    let settlement;
+    try {
+      settlement = await runSettlementSerial(() =>
+        httpServer.processSettlement(
+          paymentState.paymentPayload,
+          paymentState.paymentRequirements,
+          paymentState.declaredExtensions
+        )
+      );
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error: error instanceof Error ? error.message : "Failed to settle x402 payment."
+        },
+        { status: 500 }
+      );
+    }
 
     if (!settlement.success) {
       return NextResponse.json(
@@ -192,7 +212,17 @@ export async function handlePaidRoute(
     };
   }
 
-  const response = await onPaidRequest(paidContext);
+  let response;
+  try {
+    response = await onPaidRequest(paidContext);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Paid route handler failed."
+      },
+      { status: 500 }
+    );
+  }
 
   if (settlementHeaders) {
     for (const [key, value] of Object.entries(settlementHeaders)) {

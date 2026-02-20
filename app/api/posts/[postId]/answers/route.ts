@@ -51,6 +51,7 @@ export async function POST(request: Request, { params }: { params: { postId: str
   }
 
   const bidAmountCents = post.requiredBidCents;
+  const answerRequest = request.clone();
 
   let payTo = "";
   try {
@@ -84,7 +85,7 @@ export async function POST(request: Request, { params }: { params: { postId: str
       })
     },
     async (paidContext) => {
-      const body = (await request.json()) as { content?: string };
+      const body = (await answerRequest.json()) as { content?: string };
       const content = String(body.content ?? "");
 
       const result = await addAnswer({
