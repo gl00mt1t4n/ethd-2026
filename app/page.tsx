@@ -29,6 +29,10 @@ export default async function LiveRequestsDashboard() {
               const isQuantum = post.complexityTier === "complex";
               const isAdvanced = post.complexityTier === "medium";
               const levelLabel = isQuantum ? "L3-Quantum" : isAdvanced ? "L2-Advanced" : "L1-Basic";
+              const windowMinutesRaw = post.answerWindowSeconds / 60;
+              const windowMinutes = Number.isInteger(windowMinutesRaw)
+                ? String(windowMinutesRaw)
+                : windowMinutesRaw.toFixed(1);
               const levelColorClass = isQuantum
                 ? "bg-primary/10 border-primary/30 text-primary"
                 : isAdvanced
@@ -36,31 +40,40 @@ export default async function LiveRequestsDashboard() {
                   : "bg-slate-500/10 border-slate-500/30 text-slate-400";
 
               return (
-                <Link href={`/question/${post.id}`} key={post.id}>
-                  <article className="group relative h-full overflow-hidden rounded-lg border border-white/10 bg-[#0a0a0a] p-4 transition-colors hover:border-white/20">
-                    <div className="pointer-events-none absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-primary via-primary/60 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                    <div className="mb-2 flex items-start justify-between gap-3">
-                      <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${levelColorClass}`}>
+                <Link href={`/question/${post.id}`} key={post.id} className="homepage-card-wrap block h-full">
+                  <article className="homepage-card relative h-full overflow-hidden rounded-lg border border-white/10 bg-[#0a0a0a] p-4 transition-colors hover:border-white/20">
+                    <div className="homepage-card-accent pointer-events-none absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-primary via-primary/70 to-transparent" />
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] leading-none ${levelColorClass}`}>
                         {levelLabel}
                       </span>
-                      <span className="text-[11px] text-slate-500">Window: {post.answerWindowSeconds / 60}m</span>
+                      <span className="text-[11px] leading-none text-slate-500">Window: {windowMinutes}m</span>
                     </div>
 
-                    <h2 className="mb-2 text-base font-semibold leading-snug text-white">{post.header}</h2>
-                    <p className="mb-3 line-clamp-3 text-sm leading-relaxed text-slate-400">{post.content}</p>
+                    <h2 className="mb-2 text-[1.16rem] font-semibold leading-[1.25] text-white">{post.header}</h2>
+                    <p className="mb-3 line-clamp-3 text-[14px] leading-[1.45] text-slate-400">{post.content}</p>
 
-                    <div className="flex items-end justify-between border-t border-dashed border-white/10 pt-2.5 transition-colors group-hover:border-primary/30">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-widest text-slate-500">Current Bid</p>
-                        <p className={`font-mono text-sm font-medium ${isQuantum ? "text-primary" : "text-white"}`}>
+                    <div className="flex items-center justify-between border-t border-dashed border-white/10 pt-2 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[9px] uppercase tracking-[0.13em] leading-none text-slate-500">Current Bid</p>
+                        <p
+                          className={`rounded border px-1.5 py-[3px] font-mono text-[11px] font-semibold leading-none ${
+                            isQuantum
+                              ? "border-primary/40 bg-primary/10 text-primary"
+                              : "border-white/15 bg-white/5 text-slate-200"
+                          }`}
+                        >
                           ${(post.requiredBidCents / 100).toFixed(2)}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[11px] text-slate-300">
-                          {post.answerCount} Agent{post.answerCount === 1 ? "" : "s"}
+                      <div className="min-w-[7.5rem] text-right">
+                        <p className="inline-flex items-center justify-end gap-1 text-[12px] leading-none">
+                          <span className="font-medium text-slate-300">
+                            {post.answerCount} Agent{post.answerCount === 1 ? "" : "s"}
+                          </span>
+                          <span className="text-slate-600">·</span>
+                          <span className="text-[11px] text-slate-500">@{post.poster}</span>
                         </p>
-                        <p className="mt-0.5 text-[11px] text-slate-500">@{post.poster}</p>
                       </div>
                     </div>
                   </article>

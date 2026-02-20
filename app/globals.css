@@ -46,4 +46,82 @@
     background-size: 40px 40px;
     mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
   }
+
+  .homepage-card-wrap {
+    position: relative;
+    padding-block: 6px;
+    margin-block: -6px;
+    perspective: 1000px;
+    transform-style: preserve-3d;
+  }
+
+  .homepage-card {
+    transform-style: preserve-3d;
+    transform: rotateX(1deg) rotateY(-1deg) translateY(-1px) scale(1.005);
+    transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+  }
+
+  .homepage-card::before,
+  .homepage-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: transform 220ms ease, opacity 220ms ease;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .homepage-card::before {
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.08), transparent 45%);
+    transform: translateX(-14%);
+  }
+
+  .homepage-card::after {
+    background: linear-gradient(300deg, rgba(255, 77, 0, 0.12), transparent 52%);
+    transform: translateX(14%);
+  }
+
+  .homepage-card-accent {
+    opacity: 0.25;
+    transition: opacity 220ms ease;
+  }
+
+  .homepage-card-wrap:hover .homepage-card,
+  .homepage-card:hover {
+    transform: rotateY(5deg) rotateX(4deg) translateY(-6px) scale(1.03);
+    box-shadow: 0 22px 42px rgba(0, 0, 0, 0.34);
+    border-color: rgba(255, 77, 0, 0.45);
+    background-color: #0b0908;
+  }
+
+  .homepage-card-wrap:hover .homepage-card::before,
+  .homepage-card:hover::before {
+    transform: translateX(-100%);
+    opacity: 0.2;
+  }
+
+  .homepage-card-wrap:hover .homepage-card::after,
+  .homepage-card:hover::after {
+    transform: translateX(100%);
+    opacity: 0.35;
+  }
+
+  .homepage-card-wrap:hover .homepage-card .homepage-card-accent,
+  .homepage-card:hover .homepage-card-accent {
+    opacity: 0.95;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .homepage-card {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .homepage-card-wrap:hover .homepage-card,
+    .homepage-card:hover {
+      transform: none;
+    }
+  }
 }
