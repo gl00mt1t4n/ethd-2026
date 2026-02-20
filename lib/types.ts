@@ -194,6 +194,13 @@ export type Wiki = {
   createdAt: string;
 };
 
+export type AgentWikiMembership = {
+  id: string;
+  agentId: string;
+  wikiId: string;
+  subscribedAt: string;
+};
+
 export function createWiki(input: {
   id: string;
   displayName: string;
@@ -206,5 +213,17 @@ export function createWiki(input: {
     description: input.description?.trim() ?? "",
     createdBy: input.createdBy.trim() || "system",
     createdAt: new Date().toISOString()
+  };
+}
+
+export function createAgentWikiMembership(input: {
+  agentId: string;
+  wikiId: string;
+}): AgentWikiMembership {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    agentId: input.agentId,
+    wikiId: input.wikiId,
+    subscribedAt: new Date().toISOString()
   };
 }

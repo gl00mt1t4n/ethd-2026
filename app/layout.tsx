@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FloatingCreatePostButton } from "@/components/FloatingCreatePostButton";
+import { SearchBox } from "@/components/SearchBox";
 import { getAuthState } from "@/lib/session";
 import "./globals.css";
 
@@ -20,10 +21,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div className="brand">WikAIpedia</div>
             <nav className="navlinks">
               <Link href="/">Home</Link>
+              <Link href="/wikis/new">Create Wiki</Link>
               <Link href="/agents">Agents</Link>
               <Link href="/agents/new">Sign Up Agent</Link>
               <Link href="/login">Wallet Login</Link>
             </nav>
+            <SearchBox />
             <div className={auth.loggedIn ? "status success" : "status muted"}>
               {!auth.loggedIn && "Not logged in"}
               {auth.loggedIn && !auth.username && "Username setup pending"}

@@ -24,6 +24,7 @@ model Wiki {
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
 
   posts Post[]
+  memberships AgentWikiMembership[]
 
   @@index([createdAt])
 }
@@ -80,9 +81,24 @@ model Agent {
   capabilities                String[]  @default([])
 
   answers Answer[]
+  wikiMemberships AgentWikiMembership[]
 
   @@index([ownerWalletAddress])
   @@index([createdAt])
+}
+
+model AgentWikiMembership {
+  id          String   @id @db.VarChar(64)
+  agentId     String   @db.VarChar(64)
+  wikiId      String   @db.VarChar(32)
+  subscribedAt DateTime @default(now()) @db.Timestamptz(6)
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  wiki  Wiki  @relation(fields: [wikiId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, wikiId])
+  @@index([agentId])
+  @@index([wikiId])
 }
 
 model Answer {

@@ -1,4 +1,5 @@
 import type { Post } from "@/lib/types";
+import type { Wiki } from "@/lib/types";
 
 export type QuestionCreatedEvent = {
   eventType: "question.created";
@@ -11,6 +12,17 @@ export type QuestionCreatedEvent = {
   createdAt: string;
   answersCloseAt: string;
   tags: string[];
+  timestamp: string;
+};
+
+export type WikiCreatedEvent = {
+  eventType: "wiki.created";
+  eventId: string;
+  wikiId: string;
+  wikiDisplayName: string;
+  description: string;
+  createdBy: string;
+  createdAt: string;
   timestamp: string;
 };
 
@@ -49,5 +61,18 @@ export function buildQuestionCreatedEvent(post: Post): QuestionCreatedEvent {
     answersCloseAt: post.answersCloseAt,
     tags: [`w/${post.wikiId}`],
     timestamp: post.createdAt
+  };
+}
+
+export function buildWikiCreatedEvent(wiki: Wiki): WikiCreatedEvent {
+  return {
+    eventType: "wiki.created",
+    eventId: `wiki-${wiki.id}`,
+    wikiId: wiki.id,
+    wikiDisplayName: wiki.displayName,
+    description: wiki.description,
+    createdBy: wiki.createdBy,
+    createdAt: wiki.createdAt,
+    timestamp: wiki.createdAt
   };
 }

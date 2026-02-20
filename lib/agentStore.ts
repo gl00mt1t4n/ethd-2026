@@ -1,7 +1,16 @@
 import crypto from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { verifyAgentConnection } from "@/lib/agentConnection";
 import { prisma } from "@/lib/prisma";
-import { createAgent, toPublicAgent, type Agent, type AgentTransport, type PublicAgent } from "@/lib/types";
+import { DEFAULT_WIKI_ID, ensureDefaultWiki, findWikiById, normalizeWikiIdInput } from "@/lib/wikiStore";
+import {
+  createAgent,
+  createAgentWikiMembership,
+  toPublicAgent,
+  type Agent,
+  type AgentTransport,
+  type PublicAgent
+} from "@/lib/types";
 
 function isWalletAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
@@ -94,12 +103,107 @@ export async function listAgentsByOwner(ownerWalletAddress: string): Promise<Pub
   return agents.map((agent) => toAgent(agent as any)).map(toPublicAgent);
 }
 
+export async function listAgentSubscribedWikiIds(agentId: string): Promise<string[]> {
+  await ensureDefaultWiki();
+  const memberships = await prisma.agentWikiMembership.findMany({
+    where: { agentId },
+    select: { wikiId: true },
+    orderBy: [{ subscribedAt: "asc" }]
+  });
+  return memberships.map((entry) => entry.wikiId);
+}
+
+export async function ensureAgentDefaultWikiMembership(agentId: string): Promise<void> {
+  await ensureDefaultWiki();
+  const membership = createAgentWikiMembership({
+    agentId,
+    wikiId: DEFAULT_WIKI_ID
+  });
+
+  await prisma.agentWikiMembership.upsert({
+    where: {
+      agentId_wikiId: {
+        agentId,
+        wikiId: DEFAULT_WIKI_ID
+      }
+    },
+    update: {},
+    create: {
+      id: membership.id,
+      agentId: membership.agentId,
+      wikiId: membership.wikiId,
+      subscribedAt: new Date(membership.subscribedAt)
+    }
+  });
+}
+
+export async function joinAgentWiki(input: {
+  agentId: string;
+  wikiQuery: string;
+}): Promise<{ ok: true; wikiId: string } | { ok: false; error: string }> {
+  const wikiId = normalizeWikiIdInput(input.wikiQuery);
+  if (!wikiId) {
+    return { ok: false, error: "Wiki id is required." };
+  }
+
+  const wiki = await findWikiById(wikiId);
+  if (!wiki) {
+    return { ok: false, error: "Wiki not found." };
+  }
+
+  const membership = createAgentWikiMembership({
+    agentId: input.agentId,
+    wikiId
+  });
+
+  try {
+    await prisma.agentWikiMembership.create({
+      data: {
+        id: membership.id,
+        agentId: membership.agentId,
+        wikiId: membership.wikiId,
+        subscribedAt: new Date(membership.subscribedAt)
+      }
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { ok: true, wikiId };
+    }
+    throw error;
+  }
+
+  return { ok: true, wikiId };
+}
+
+export async function leaveAgentWiki(input: {
+  agentId: string;
+  wikiQuery: string;
+}): Promise<{ ok: true; wikiId: string } | { ok: false; error: string }> {
+  const wikiId = normalizeWikiIdInput(input.wikiQuery);
+  if (!wikiId) {
+    return { ok: false, error: "Wiki id is required." };
+  }
+
+  await prisma.agentWikiMembership.deleteMany({
+    where: {
+      agentId: input.agentId,
+      wikiId
+    }
+  });
+
+  return { ok: true, wikiId };
+}
+
 export async function findAgentByAccessToken(token: string): Promise<Agent | null> {
   const tokenHash = hashToken(token);
   const agent = await prisma.agent.findUnique({
     where: { authTokenHash: tokenHash }
   });
-  return agent ? toAgent(agent as any) : null;
+  if (!agent) {
+    return null;
+  }
+  await ensureAgentDefaultWikiMembership(agent.id);
+  return toAgent(agent as any);
 }
 
 export async function findAgentById(agentId: string): Promise<Agent | null> {
@@ -211,6 +315,8 @@ export async function registerAgent(input: {
       capabilities: agent.capabilities
     } as any
   });
+
+  await ensureAgentDefaultWikiMembership(created.id);
 
   return { ok: true, agent: toPublicAgent(toAgent(created as any)), agentAccessToken: accessToken };
 }

@@ -5,10 +5,9 @@ import { createWiki, type Wiki } from "@/lib/types";
 export const DEFAULT_WIKI_ID = "general";
 export const DEFAULT_WIKI_TAG = `w/${DEFAULT_WIKI_ID}`;
 export const DEFAULT_WIKI_DISPLAY_NAME = "General";
-
 const WIKI_ID_REGEX = /^[a-z0-9][a-z0-9-_]{1,30}[a-z0-9]$/;
 
-function normalizeWikiId(input: string): string {
+export function normalizeWikiIdInput(input: string): string {
   return input
     .trim()
     .toLowerCase()
@@ -34,7 +33,7 @@ function toWiki(record: {
   };
 }
 
-function scoreWikiQuery(query: string, wiki: Pick<Wiki, "id" | "displayName">): number {
+function scoreWikiQuery(query: string, wiki: Pick<Wiki, "id" | "displayName" | "description">): number {
   const q = query.trim().toLowerCase().replace(/^w\//, "");
   if (!q) {
     return 0;
@@ -42,6 +41,7 @@ function scoreWikiQuery(query: string, wiki: Pick<Wiki, "id" | "displayName">): 
 
   const id = wiki.id.toLowerCase();
   const display = wiki.displayName.toLowerCase();
+  const description = wiki.description.toLowerCase();
 
   if (id === q) return 100;
   if (display === q) return 95;
@@ -49,10 +49,11 @@ function scoreWikiQuery(query: string, wiki: Pick<Wiki, "id" | "displayName">): 
   if (display.startsWith(q)) return 80;
   if (id.includes(q)) return 70;
   if (display.includes(q)) return 65;
+  if (description.includes(q)) return 40;
 
   const qTokens = q.split(/[-_\s]+/).filter(Boolean);
   if (qTokens.length > 0) {
-    const joined = `${id} ${display}`;
+    const joined = `${id} ${display} ${description}`;
     let tokenHits = 0;
     for (const token of qTokens) {
       if (joined.includes(token)) {
@@ -60,7 +61,7 @@ function scoreWikiQuery(query: string, wiki: Pick<Wiki, "id" | "displayName">): 
       }
     }
     if (tokenHits > 0) {
-      return 40 + tokenHits * 5;
+      return 30 + tokenHits * 5;
     }
   }
 
@@ -90,7 +91,7 @@ export async function listWikis(): Promise<Wiki[]> {
 }
 
 export async function findWikiById(wikiId: string): Promise<Wiki | null> {
-  const normalized = normalizeWikiId(wikiId);
+  const normalized = normalizeWikiIdInput(wikiId);
   if (!normalized) {
     return null;
   }
@@ -101,11 +102,76 @@ export async function findWikiById(wikiId: string): Promise<Wiki | null> {
   return row ? toWiki(row) : null;
 }
 
+export async function getLatestWikiAnchor(): Promise<{ id: string; createdAt: string } | null> {
+  const row = await prisma.wiki.findFirst({
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { id: true, createdAt: true }
+  });
+  if (!row) {
+    return null;
+  }
+  return {
+    id: row.id,
+    createdAt: row.createdAt.toISOString()
+  };
+}
+
+export async function listWikisAfterAnchor(
+  anchor: { id: string; createdAt: string } | null,
+  limit = 200
+): Promise<Wiki[]> {
+  const anchorDate = anchor ? new Date(anchor.createdAt) : null;
+  const anchorId = anchor?.id ?? "";
+
+  const rows = await prisma.wiki.findMany({
+    where: anchorDate
+      ? {
+          OR: [{ createdAt: { gt: anchorDate } }, { createdAt: anchorDate, id: { gt: anchorId } }]
+        }
+      : undefined,
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    take: limit
+  });
+
+  return rows.map(toWiki);
+}
+
+export async function suggestWikis(query: string, limit = 8): Promise<Wiki[]> {
+  const q = query.trim();
+  if (!q) {
+    return [];
+  }
+
+  const all = await listWikis();
+  return all
+    .map((wiki) => ({ wiki, score: scoreWikiQuery(q, wiki) }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.wiki.id.localeCompare(b.wiki.id))
+    .slice(0, limit)
+    .map((entry) => entry.wiki);
+}
+
+export async function searchWikis(query: string, limit = 20): Promise<Wiki[]> {
+  const q = query.trim();
+  if (!q) {
+    return [];
+  }
+
+  const all = await listWikis();
+  return all
+    .map((wiki) => ({ wiki, score: scoreWikiQuery(q, wiki) }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.wiki.id.localeCompare(b.wiki.id))
+    .slice(0, limit)
+    .map((entry) => entry.wiki);
+}
+
 export async function createWikiRecord(input: {
   rawName: string;
   createdBy: string;
+  description?: string;
 }): Promise<{ ok: true; wiki: Wiki } | { ok: false; error: string }> {
-  const normalizedId = normalizeWikiId(input.rawName);
+  const normalizedId = normalizeWikiIdInput(input.rawName);
   if (!WIKI_ID_REGEX.test(normalizedId)) {
     return {
       ok: false,
@@ -117,7 +183,7 @@ export async function createWikiRecord(input: {
   const wiki = createWiki({
     id: normalizedId,
     displayName,
-    description: "",
+    description: input.description ?? "",
     createdBy: input.createdBy
   });
 
@@ -134,10 +200,6 @@ export async function createWikiRecord(input: {
     return { ok: true, wiki: toWiki(created) };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const existing = await findWikiById(normalizedId);
-      if (existing) {
-        return { ok: true, wiki: existing };
-      }
       return { ok: false, error: "Wiki already exists." };
     }
     throw error;
@@ -146,7 +208,6 @@ export async function createWikiRecord(input: {
 
 export async function resolveWikiForPost(input: {
   wikiQuery: string;
-  createdBy: string;
 }): Promise<{ ok: true; wiki: Wiki } | { ok: false; error: string }> {
   const query = input.wikiQuery.trim();
   if (!query) {
@@ -154,29 +215,22 @@ export async function resolveWikiForPost(input: {
     return { ok: true, wiki };
   }
 
-  const normalized = normalizeWikiId(query);
-  const exact = normalized ? await findWikiById(normalized) : null;
-  if (exact) {
-    return { ok: true, wiki: exact };
+  const normalized = normalizeWikiIdInput(query);
+  const exactById = normalized ? await findWikiById(normalized) : null;
+  if (exactById) {
+    return { ok: true, wiki: exactById };
   }
 
   const all = await listWikis();
-  const ranked = all
-    .map((wiki) => ({ wiki, score: scoreWikiQuery(query, wiki) }))
-    .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score);
-
-  if (ranked[0] && ranked[0].score >= 85) {
-    return { ok: true, wiki: ranked[0].wiki };
+  const exactByDisplay = all.find(
+    (wiki) => wiki.displayName.trim().toLowerCase() === query.trim().toLowerCase()
+  );
+  if (exactByDisplay) {
+    return { ok: true, wiki: exactByDisplay };
   }
 
-  const created = await createWikiRecord({
-    rawName: query,
-    createdBy: input.createdBy
-  });
-  if (!created.ok) {
-    return { ok: false, error: created.error };
-  }
-  return { ok: true, wiki: created.wiki };
+  return {
+    ok: false,
+    error: "Wiki not found. Create it first from Create Wiki."
+  };
 }
-
