@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { createWiki, type Wiki } from "@/lib/types";
+import { createWiki, type Wiki, type WikiDiscoveryCandidate } from "@/lib/types";
 
 export const DEFAULT_WIKI_ID = "general";
 export const DEFAULT_WIKI_TAG = `w/${DEFAULT_WIKI_ID}`;
@@ -66,6 +66,16 @@ function scoreWikiQuery(query: string, wiki: Pick<Wiki, "id" | "displayName" | "
   }
 
   return 0;
+}
+
+function wikiPostWhereClause(wikiId: string) {
+  if (wikiId === DEFAULT_WIKI_ID) {
+    return {
+      OR: [{ wikiId: DEFAULT_WIKI_ID }, { wikiId: null }]
+    };
+  }
+
+  return { wikiId };
 }
 
 export async function ensureDefaultWiki(): Promise<Wiki> {
@@ -136,6 +146,49 @@ export async function listWikisAfterAnchor(
   return rows.map(toWiki);
 }
 
+function scoreWikiInterests(interests: string[], wiki: Pick<Wiki, "id" | "displayName" | "description">): number {
+  if (interests.length === 0) {
+    return 0;
+  }
+
+  const text = `${wiki.id} ${wiki.displayName} ${wiki.description}`.toLowerCase();
+  let score = 0;
+
+  for (const interest of interests) {
+    const token = interest.trim().toLowerCase();
+    if (!token) {
+      continue;
+    }
+    if (text.includes(token)) {
+      score += 15;
+    }
+  }
+
+  return Math.min(score, 60);
+}
+
+function scoreWikiActivity(input: {
+  recentPostCount: number;
+  lastPostAt: string | null;
+  memberCount: number;
+}): number {
+  let score = Math.min(input.recentPostCount * 4, 30);
+  score += Math.min(input.memberCount, 20);
+
+  if (input.lastPostAt) {
+    const ageMs = Date.now() - new Date(input.lastPostAt).getTime();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const sevenDays = 7 * oneDay;
+    if (ageMs <= oneDay) {
+      score += 20;
+    } else if (ageMs <= sevenDays) {
+      score += 10;
+    }
+  }
+
+  return Math.min(score, 40);
+}
+
 export async function suggestWikis(query: string, limit = 8): Promise<Wiki[]> {
   const q = query.trim();
   if (!q) {
@@ -164,6 +217,68 @@ export async function searchWikis(query: string, limit = 20): Promise<Wiki[]> {
     .sort((a, b) => b.score - a.score || a.wiki.id.localeCompare(b.wiki.id))
     .slice(0, limit)
     .map((entry) => entry.wiki);
+}
+
+export async function listWikiDiscoveryCandidates(input: {
+  joinedWikiIds: string[];
+  interests?: string[];
+  query?: string;
+  limit?: number;
+}): Promise<WikiDiscoveryCandidate[]> {
+  const joined = new Set(input.joinedWikiIds.map((wikiId) => normalizeWikiIdInput(wikiId)).filter(Boolean));
+  const interests = (input.interests ?? [])
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  const query = input.query?.trim() ?? "";
+  const limit = Number.isFinite(input.limit) ? Math.max(1, Math.min(100, Number(input.limit))) : 20;
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const allWikis = await listWikis();
+  const candidates = allWikis.filter((wiki) => !joined.has(wiki.id));
+
+  const ranked = await Promise.all(
+    candidates.map(async (wiki) => {
+      const [memberCount, recentPostCount, latestPost] = await Promise.all([
+        prisma.agentWikiMembership.count({
+          where: { wikiId: wiki.id }
+        }),
+        prisma.post.count({
+          where: {
+            AND: [wikiPostWhereClause(wiki.id), { createdAt: { gte: weekAgo } }]
+          } as any
+        }),
+        prisma.post.findFirst({
+          where: wikiPostWhereClause(wiki.id) as any,
+          orderBy: [{ createdAt: "desc" }],
+          select: { createdAt: true }
+        })
+      ]);
+
+      const relevanceScore = Math.min(
+        60,
+        scoreWikiInterests(interests, wiki) + (query ? Math.min(30, scoreWikiQuery(query, wiki)) : 0)
+      );
+      const lastPostAt = latestPost?.createdAt?.toISOString() ?? null;
+      const activityScore = scoreWikiActivity({
+        recentPostCount,
+        lastPostAt,
+        memberCount
+      });
+      const score = Math.min(100, relevanceScore + activityScore);
+
+      return {
+        wiki,
+        memberCount,
+        recentPostCount,
+        lastPostAt,
+        relevanceScore,
+        activityScore,
+        score
+      };
+    })
+  );
+
+  return ranked.sort((a, b) => b.score - a.score || a.wiki.id.localeCompare(b.wiki.id)).slice(0, limit);
 }
 
 export async function createWikiRecord(input: {

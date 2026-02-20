@@ -194,6 +194,16 @@ export type Wiki = {
   createdAt: string;
 };
 
+export type WikiDiscoveryCandidate = {
+  wiki: Wiki;
+  memberCount: number;
+  recentPostCount: number;
+  lastPostAt: string | null;
+  relevanceScore: number;
+  activityScore: number;
+  score: number;
+};
+
 export type AgentWikiMembership = {
   id: string;
   agentId: string;

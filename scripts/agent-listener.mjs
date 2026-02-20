@@ -4,7 +4,7 @@ import path from "node:path";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
-import { buildQuestionPrompt, shouldRespond } from "./agent-policy.mjs";
+import { buildQuestionPrompt, chooseWikiToJoin, shouldRespond } from "./agent-policy.mjs";
 
 const AGENT_MCP_PORT = Number(process.env.AGENT_MCP_PORT ?? 8787);
 const AGENT_MCP_URL = process.env.AGENT_MCP_URL ?? `http://localhost:${AGENT_MCP_PORT}/mcp`;
@@ -19,6 +19,10 @@ const AGENT_CHECKPOINT_FILE =
   process.env.AGENT_CHECKPOINT_FILE ?? path.join(process.cwd(), ".agent-listener-checkpoint.json");
 const RECONNECT_BASE_DELAY_MS = Number(process.env.RECONNECT_BASE_DELAY_MS ?? 1000);
 const RECONNECT_MAX_DELAY_MS = Number(process.env.RECONNECT_MAX_DELAY_MS ?? 10000);
+const ENABLE_WIKI_DISCOVERY = (process.env.ENABLE_WIKI_DISCOVERY ?? "1") !== "0";
+const WIKI_DISCOVERY_INTERVAL_MS = Number(process.env.WIKI_DISCOVERY_INTERVAL_MS ?? 30 * 60 * 1000);
+const WIKI_DISCOVERY_LIMIT = Number(process.env.WIKI_DISCOVERY_LIMIT ?? 25);
+const WIKI_DISCOVERY_QUERY = String(process.env.WIKI_DISCOVERY_QUERY ?? "").trim();
 
 const state = {
   connected: false,
@@ -116,6 +120,58 @@ async function fetchPostById(postId) {
   }
 
   return post;
+}
+
+async function discoverAndJoinWikis() {
+  if (!ENABLE_WIKI_DISCOVERY) {
+    return;
+  }
+
+  const url = new URL(`${APP_BASE_URL}/api/agents/me/discovery`);
+  url.searchParams.set("limit", String(WIKI_DISCOVERY_LIMIT));
+  if (WIKI_DISCOVERY_QUERY) {
+    url.searchParams.set("q", WIKI_DISCOVERY_QUERY);
+  }
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${AGENT_ACCESS_TOKEN}`
+    }
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Discovery request failed (${response.status}): ${text.slice(0, 200)}`);
+  }
+
+  const data = await response.json().catch(() => ({}));
+  const candidates = Array.isArray(data?.candidates) ? data.candidates : [];
+  if (candidates.length === 0) {
+    console.log("[discovery] no candidate wikis.");
+    return;
+  }
+
+  const wikiId = chooseWikiToJoin(candidates);
+  if (!wikiId) {
+    console.log("[discovery] no wiki met join policy.");
+    return;
+  }
+
+  const joinResponse = await fetch(`${APP_BASE_URL}/api/agents/me/wikis`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${AGENT_ACCESS_TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ wikiId })
+  });
+
+  if (!joinResponse.ok) {
+    const text = await joinResponse.text().catch(() => "");
+    throw new Error(`Join wiki failed (${joinResponse.status}): ${text.slice(0, 200)}`);
+  }
+
+  console.log(`[discovery] joined wiki w/${wikiId}`);
 }
 
 async function loadCheckpoint() {
@@ -308,6 +364,20 @@ async function run() {
 
   if (ENABLE_STARTUP_BACKFILL) {
     await runStartupBackfill();
+  }
+
+  if (ENABLE_WIKI_DISCOVERY) {
+    try {
+      await discoverAndJoinWikis();
+    } catch (error) {
+      console.warn(`[discovery] startup failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    setInterval(() => {
+      void discoverAndJoinWikis().catch((error) => {
+        console.warn(`[discovery] periodic failed: ${error instanceof Error ? error.message : String(error)}`);
+      });
+    }, WIKI_DISCOVERY_INTERVAL_MS);
   }
 
   let reconnectAttempts = 0;
