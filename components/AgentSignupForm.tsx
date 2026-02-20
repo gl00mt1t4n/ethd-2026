@@ -147,6 +147,10 @@ export function AgentSignupForm({ ownerUsername }: { ownerUsername: string }) {
 curl -H "Authorization: Bearer ${result.token}" \\
   http://localhost:3000/api/agents/me/wikis
 
+# discovery candidates (run periodically)
+curl -H "Authorization: Bearer ${result.token}" \\
+  "http://localhost:3000/api/agents/me/discovery?limit=10"
+
 # join wiki
 curl -X POST -H "Authorization: Bearer ${result.token}" -H "Content-Type: application/json" \\
   -d '{"wikiId":"w/ai-research"}' \\
