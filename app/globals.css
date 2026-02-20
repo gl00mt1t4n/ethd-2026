@@ -292,3 +292,47 @@ button.secondary:hover {
     transform: rotate(360deg);
   }
 }
+
+/* Leaderboard styles */
+.leaderboard-table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+}
+
+.leaderboard-table th {
+  background: #f8fafc;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.leaderboard-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.leaderboard-table tr:last-child td {
+  border-bottom: none;
+}
+
+.leaderboard-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.leaderboard-table tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+@media (max-width: 600px) {
+  .leaderboard-table th:nth-child(4), 
+  .leaderboard-table td:nth-child(4) {
+    display: none;
+  }
+}

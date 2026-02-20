@@ -1,41 +1,80 @@
-import { cookies } from "next/headers";
+import { PrivyClient, type LinkedAccountWithMetadata, type User } from "@privy-io/server-auth";
 import { NextResponse } from "next/server";
 import { AUTH_NONCE_COOKIE_NAME, AUTH_WALLET_COOKIE_NAME } from "@/lib/session";
 import { findUserByWallet } from "@/lib/userStore";
-import { buildWalletAuthMessage } from "@/lib/walletAuthMessage";
 
 export const runtime = "nodejs";
+
+const PRIVY_APP_ID = String(process.env.PRIVY_APP_ID ?? process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "").trim();
+const PRIVY_APP_SECRET = String(process.env.PRIVY_APP_SECRET ?? "").trim();
+
+let privyClient: PrivyClient | null = null;
 
 function isWalletAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
+function getPrivyClient(): PrivyClient | null {
+  if (!PRIVY_APP_ID || !PRIVY_APP_SECRET) {
+    return null;
+  }
+
+  if (!privyClient) {
+    privyClient = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
+  }
+
+  return privyClient;
+}
+
+function getIdToken(request: Request, bodyToken?: string): string {
+  const header = request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
+  if (header.toLowerCase().startsWith("bearer ")) {
+    return header.slice(7).trim();
+  }
+  return String(bodyToken ?? "").trim();
+}
+
+function isEthereumWalletAccount(
+  account: LinkedAccountWithMetadata
+): account is Extract<LinkedAccountWithMetadata, { type: "wallet" }> {
+  return account.type === "wallet" && account.chainType === "ethereum";
+}
+
+function extractWalletAddress(user: User): string | null {
+  if (user.wallet?.chainType === "ethereum" && user.wallet.address) {
+    return user.wallet.address.toLowerCase();
+  }
+
+  const linkedWallet = user.linkedAccounts.find(isEthereumWalletAccount);
+  return linkedWallet?.address?.toLowerCase() ?? null;
+}
+
 export async function POST(request: Request) {
-  const body = (await request.json()) as { walletAddress?: string; signature?: string; message?: string };
+  const body = (await request.json().catch(() => ({}))) as { idToken?: string };
+  const idToken = getIdToken(request, body.idToken);
 
-  const walletAddress = String(body.walletAddress ?? "").toLowerCase();
-  const signature = String(body.signature ?? "");
-  const providedMessage = String(body.message ?? "");
-
-  if (!isWalletAddress(walletAddress) || !signature) {
-    return NextResponse.json({ error: "Invalid verification payload." }, { status: 400 });
+  if (!idToken) {
+    return NextResponse.json({ error: "Missing Privy auth token." }, { status: 400 });
   }
 
-  const store = await cookies();
-  const nonce = store.get(AUTH_NONCE_COOKIE_NAME)?.value;
-
-  if (!nonce) {
-    return NextResponse.json({ error: "Missing auth nonce. Retry login." }, { status: 400 });
+  const client = getPrivyClient();
+  if (!client) {
+    return NextResponse.json(
+      { error: "Privy server config missing. Set PRIVY_APP_SECRET and NEXT_PUBLIC_PRIVY_APP_ID." },
+      { status: 500 }
+    );
   }
 
-  const expectedMessage = buildWalletAuthMessage(walletAddress, nonce);
-  if (expectedMessage !== providedMessage) {
-    return NextResponse.json({ error: "Auth message mismatch." }, { status: 400 });
+  let user: User;
+  try {
+    user = await client.getUser({ idToken });
+  } catch {
+    return NextResponse.json({ error: "Invalid Privy auth token." }, { status: 401 });
   }
 
-  // Kept intentionally minimal for hackathon scaffolding: nonce + wallet-bound message presence check.
-  if (signature.length < 40) {
-    return NextResponse.json({ error: "Invalid signature format." }, { status: 401 });
+  const walletAddress = extractWalletAddress(user);
+  if (!walletAddress || !isWalletAddress(walletAddress)) {
+    return NextResponse.json({ error: "No linked Ethereum wallet found on this Privy account." }, { status: 400 });
   }
 
   const existingUser = await findUserByWallet(walletAddress);
@@ -44,6 +83,7 @@ export async function POST(request: Request) {
     ok: true,
     loggedIn: true,
     walletAddress,
+    privyUserId: user.id,
     hasUsername: Boolean(existingUser),
     username: existingUser?.username ?? null
   });
