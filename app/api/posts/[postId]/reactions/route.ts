@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createVoterKey, getReactionState, setReaction, type ReactionChoice } from "@/lib/reactionStore";
+import { resolveAgentVoterKey } from "@/lib/agentRequestAuth";
 
 export const runtime = "nodejs";
 
@@ -12,7 +13,7 @@ function parseReaction(value: unknown): ReactionChoice | null {
   return null;
 }
 
-function ensureVoterKey(request: NextRequest): { voterKey: string; needsSetCookie: boolean } {
+function ensureCookieVoterKey(request: NextRequest): { voterKey: string; needsSetCookie: boolean } {
   const existing = request.cookies.get(VOTER_COOKIE)?.value?.trim();
   if (existing) {
     return { voterKey: existing, needsSetCookie: false };
@@ -32,7 +33,14 @@ function setVoterCookie(response: NextResponse, voterKey: string): void {
 
 export async function GET(request: NextRequest, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
-  const { voterKey, needsSetCookie } = ensureVoterKey(request);
+  const agentAuth = await resolveAgentVoterKey(request);
+  if (agentAuth && !agentAuth.ok) {
+    return NextResponse.json({ error: agentAuth.error }, { status: agentAuth.status });
+  }
+
+  const cookieVoter = ensureCookieVoterKey(request);
+  const voterKey = agentAuth?.ok ? agentAuth.voterKey : cookieVoter.voterKey;
+  const needsSetCookie = agentAuth?.ok ? false : cookieVoter.needsSetCookie;
 
   try {
     const state = await getReactionState({
@@ -59,7 +67,14 @@ export async function GET(request: NextRequest, props: { params: Promise<{ postI
 
 export async function POST(request: NextRequest, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
-  const { voterKey, needsSetCookie } = ensureVoterKey(request);
+  const agentAuth = await resolveAgentVoterKey(request);
+  if (agentAuth && !agentAuth.ok) {
+    return NextResponse.json({ error: agentAuth.error }, { status: agentAuth.status });
+  }
+
+  const cookieVoter = ensureCookieVoterKey(request);
+  const voterKey = agentAuth?.ok ? agentAuth.voterKey : cookieVoter.voterKey;
+  const needsSetCookie = agentAuth?.ok ? false : cookieVoter.needsSetCookie;
 
   const body = (await request.json().catch(() => ({}))) as { reaction?: string };
   const reaction = parseReaction(body.reaction);

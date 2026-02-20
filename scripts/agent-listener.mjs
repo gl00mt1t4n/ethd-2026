@@ -3,8 +3,18 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
-import { privateKeyToAccount } from "viem/accounts";
-import { buildQuestionPrompt, chooseWikiToJoin, shouldRespond } from "./agent-policy.mjs";
+import { mnemonicToAccount, privateKeyToAccount } from "viem/accounts";
+import {
+  buildQuestionPrompt,
+  evaluateAnswerReaction,
+  evaluatePostReaction,
+  evaluateResponse,
+  evaluateWikiJoin,
+  evaluateWikiLeave
+} from "./agent-policy.mjs";
+import { loadLocalEnv } from "./load-local-env.mjs";
+
+loadLocalEnv();
 
 const AGENT_MCP_PORT = Number(process.env.AGENT_MCP_PORT ?? 8787);
 const AGENT_MCP_URL = process.env.AGENT_MCP_URL ?? `http://localhost:${AGENT_MCP_PORT}/mcp`;
@@ -13,6 +23,8 @@ const APP_BASE_URL = process.env.APP_BASE_URL ?? `http://localhost:${APP_PORT}`;
 const LISTENER_STATUS_PORT = Number(process.env.LISTENER_STATUS_PORT ?? 0);
 const AGENT_ACCESS_TOKEN = (process.env.AGENT_ACCESS_TOKEN ?? "").trim();
 const AGENT_BASE_PRIVATE_KEY = (process.env.AGENT_BASE_PRIVATE_KEY ?? "").trim();
+const MNEMONIC_PHRASE = (process.env.MNEMONIC_PHRASE ?? process.env.AGENTKIT_MNEMONIC ?? "").trim();
+const WALLET_DERIVATION_PATH = String(process.env.AGENT_WALLET_DERIVATION_PATH ?? "m/44'/60'/0'/0/0").trim();
 const X402_BASE_NETWORK = process.env.X402_BASE_NETWORK ?? "eip155:84532";
 const ENABLE_STARTUP_BACKFILL = (process.env.ENABLE_STARTUP_BACKFILL ?? "0") !== "0";
 const AGENT_CHECKPOINT_FILE =
@@ -23,6 +35,9 @@ const ENABLE_WIKI_DISCOVERY = (process.env.ENABLE_WIKI_DISCOVERY ?? "1") !== "0"
 const WIKI_DISCOVERY_INTERVAL_MS = Number(process.env.WIKI_DISCOVERY_INTERVAL_MS ?? 30 * 60 * 1000);
 const WIKI_DISCOVERY_LIMIT = Number(process.env.WIKI_DISCOVERY_LIMIT ?? 25);
 const WIKI_DISCOVERY_QUERY = String(process.env.WIKI_DISCOVERY_QUERY ?? "").trim();
+const AGENT_RESPONSE_LOG_VERBOSE = (process.env.AGENT_RESPONSE_LOG_VERBOSE ?? "1") !== "0";
+const AGENT_REACTION_CHECKPOINT_FILE =
+  process.env.AGENT_REACTION_CHECKPOINT_FILE ?? `${AGENT_CHECKPOINT_FILE}.reactions.json`;
 
 const state = {
   connected: false,
@@ -32,6 +47,9 @@ const state = {
   lastEventAt: "",
   lastEventId: ""
 };
+const reactionState = {
+  reactedPostIds: new Set()
+};
 
 if (!AGENT_ACCESS_TOKEN) {
   console.error("Missing AGENT_ACCESS_TOKEN.");
@@ -39,18 +57,30 @@ if (!AGENT_ACCESS_TOKEN) {
 }
 
 let fetchWithPayment = fetch;
+let paymentAccount = null;
+
 if (AGENT_BASE_PRIVATE_KEY) {
-  const account = privateKeyToAccount(AGENT_BASE_PRIVATE_KEY);
+  paymentAccount = privateKeyToAccount(AGENT_BASE_PRIVATE_KEY);
+} else if (MNEMONIC_PHRASE) {
+  paymentAccount = mnemonicToAccount(MNEMONIC_PHRASE, { path: WALLET_DERIVATION_PATH });
+  console.log(
+    `Using wallet derived from MNEMONIC_PHRASE (path=${WALLET_DERIVATION_PATH}, address=${paymentAccount.address}).`
+  );
+}
+
+if (paymentAccount) {
   fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
     schemes: [
       {
         network: X402_BASE_NETWORK,
-        client: new ExactEvmScheme(account)
+        client: new ExactEvmScheme(paymentAccount)
       }
     ]
   });
 } else {
-  console.warn("AGENT_BASE_PRIVATE_KEY not set. Paid answer submission will fail on x402-protected routes.");
+  console.warn(
+    "No signing wallet configured. Set AGENT_BASE_PRIVATE_KEY or MNEMONIC_PHRASE/AGENTKIT_MNEMONIC. Paid answer submission will fail on x402-protected routes."
+  );
 }
 
 async function callAgent(question) {
@@ -92,8 +122,14 @@ async function submitAnswer(postId, answerText) {
     return { ok: true };
   }
 
-  const maybeJson = await response.json().catch(() => null);
-  const errorMessage = maybeJson?.error ?? `HTTP ${response.status}`;
+  const bodyText = await response.text().catch(() => "");
+  let maybeJson = null;
+  try {
+    maybeJson = bodyText ? JSON.parse(bodyText) : null;
+  } catch {
+    maybeJson = null;
+  }
+  const errorMessage = maybeJson?.error ?? (bodyText.trim() || `HTTP ${response.status}`);
 
   if (response.status === 402 && !AGENT_BASE_PRIVATE_KEY) {
     return { ok: false, error: "x402 payment required and AGENT_BASE_PRIVATE_KEY is missing." };
@@ -104,6 +140,42 @@ async function submitAnswer(postId, answerText) {
   }
 
   return { ok: false, error: `Failed to submit answer (${response.status}): ${errorMessage}` };
+}
+
+async function submitPostReaction(postId, reaction) {
+  const response = await fetch(`${APP_BASE_URL}/api/posts/${postId}/reactions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${AGENT_ACCESS_TOKEN}`
+    },
+    body: JSON.stringify({ reaction })
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    return { ok: false, error: `Failed to react on post (${response.status}): ${text.slice(0, 200)}` };
+  }
+  const payload = await response.json().catch(() => ({}));
+  return { ok: true, payload };
+}
+
+async function submitAnswerReaction(postId, answerId, reaction) {
+  const response = await fetch(`${APP_BASE_URL}/api/posts/${postId}/answers/${answerId}/reactions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${AGENT_ACCESS_TOKEN}`
+    },
+    body: JSON.stringify({ reaction })
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    return { ok: false, error: `Failed to react on answer (${response.status}): ${text.slice(0, 200)}` };
+  }
+  const payload = await response.json().catch(() => ({}));
+  return { ok: true, payload };
 }
 
 async function fetchPostById(postId) {
@@ -122,11 +194,38 @@ async function fetchPostById(postId) {
   return post;
 }
 
+async function fetchAnswersByPostId(postId) {
+  const response = await fetch(`${APP_BASE_URL}/api/posts/${postId}/answers`);
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Failed to fetch answers for ${postId} (${response.status}): ${text.slice(0, 200)}`);
+  }
+
+  const data = await response.json().catch(() => ({}));
+  return Array.isArray(data?.answers) ? data.answers : [];
+}
+
+async function fetchJoinedWikiIds() {
+  const response = await fetch(`${APP_BASE_URL}/api/agents/me/wikis`, {
+    headers: {
+      Authorization: `Bearer ${AGENT_ACCESS_TOKEN}`
+    }
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Joined-wikis request failed (${response.status}): ${text.slice(0, 200)}`);
+  }
+
+  const data = await response.json().catch(() => ({}));
+  return Array.isArray(data?.wikiIds) ? data.wikiIds.map((id) => String(id).trim().toLowerCase()).filter(Boolean) : [];
+}
+
 async function discoverAndJoinWikis() {
   if (!ENABLE_WIKI_DISCOVERY) {
     return;
   }
 
+  const joinedBefore = await fetchJoinedWikiIds();
   const url = new URL(`${APP_BASE_URL}/api/agents/me/discovery`);
   url.searchParams.set("limit", String(WIKI_DISCOVERY_LIMIT));
   if (WIKI_DISCOVERY_QUERY) {
@@ -151,27 +250,50 @@ async function discoverAndJoinWikis() {
     return;
   }
 
-  const wikiId = chooseWikiToJoin(candidates);
-  if (!wikiId) {
-    console.log("[discovery] no wiki met join policy.");
+  const joinDecision = evaluateWikiJoin(candidates);
+  if (!joinDecision.wikiId) {
+    console.log(
+      `[discovery] no wiki joined reason=${joinDecision.reason}${AGENT_RESPONSE_LOG_VERBOSE ? ` joined=${joinedBefore.join(",") || "none"}` : ""}`
+    );
+  } else {
+    const joinResponse = await fetch(`${APP_BASE_URL}/api/agents/me/wikis`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${AGENT_ACCESS_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ wikiId: joinDecision.wikiId })
+    });
+
+    if (!joinResponse.ok) {
+      const text = await joinResponse.text().catch(() => "");
+      throw new Error(`Join wiki failed (${joinResponse.status}): ${text.slice(0, 200)}`);
+    }
+    console.log(`[discovery] joined wiki w/${joinDecision.wikiId} reason=${joinDecision.reason}`);
+  }
+
+  const joinedAfter = await fetchJoinedWikiIds();
+  const leaveDecision = evaluateWikiLeave(joinedAfter);
+  if (!leaveDecision.wikiId) {
+    console.log(
+      `[discovery] no wiki left reason=${leaveDecision.reason}${AGENT_RESPONSE_LOG_VERBOSE ? ` joined=${joinedAfter.join(",") || "none"}` : ""}`
+    );
     return;
   }
 
-  const joinResponse = await fetch(`${APP_BASE_URL}/api/agents/me/wikis`, {
-    method: "POST",
+  const leaveResponse = await fetch(`${APP_BASE_URL}/api/agents/me/wikis`, {
+    method: "DELETE",
     headers: {
       Authorization: `Bearer ${AGENT_ACCESS_TOKEN}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ wikiId })
+    body: JSON.stringify({ wikiId: leaveDecision.wikiId })
   });
-
-  if (!joinResponse.ok) {
-    const text = await joinResponse.text().catch(() => "");
-    throw new Error(`Join wiki failed (${joinResponse.status}): ${text.slice(0, 200)}`);
+  if (!leaveResponse.ok) {
+    const text = await leaveResponse.text().catch(() => "");
+    throw new Error(`Leave wiki failed (${leaveResponse.status}): ${text.slice(0, 200)}`);
   }
-
-  console.log(`[discovery] joined wiki w/${wikiId}`);
+  console.log(`[discovery] left wiki w/${leaveDecision.wikiId} reason=${leaveDecision.reason}`);
 }
 
 async function loadCheckpoint() {
@@ -191,18 +313,98 @@ async function saveCheckpoint(eventId) {
   state.lastEventId = eventId;
 }
 
+async function loadReactionCheckpoint() {
+  try {
+    const raw = await fs.readFile(AGENT_REACTION_CHECKPOINT_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    const reactedPostIds = Array.isArray(parsed?.reactedPostIds)
+      ? parsed.reactedPostIds.map((id) => String(id).trim()).filter(Boolean)
+      : [];
+    for (const postId of reactedPostIds) {
+      reactionState.reactedPostIds.add(postId);
+    }
+  } catch {}
+}
+
+async function saveReactionCheckpoint() {
+  const payload = JSON.stringify(
+    {
+      reactedPostIds: [...reactionState.reactedPostIds],
+      updatedAt: new Date().toISOString()
+    },
+    null,
+    2
+  );
+  await fs.writeFile(AGENT_REACTION_CHECKPOINT_FILE, payload, "utf8");
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function handleQuestionEvent(payload) {
-  if (!shouldRespond(payload)) {
+  const responseDecision = evaluateResponse(payload);
+  if (!responseDecision.ok) {
+    console.log(
+      `[event] skipped eventType=${payload.eventType} postId=${payload.postId} reason=${responseDecision.reason}`
+    );
     return;
   }
 
+  console.log(`[event] accepted postId=${payload.postId} reason=${responseDecision.reason}`);
   console.log(`[event] received eventType=${payload.eventType} postId=${payload.postId} header="${payload.header}"`);
   const post = await fetchPostById(payload.postId);
   console.log(`[event] fetched postId=${payload.postId}`);
+
+  if (!reactionState.reactedPostIds.has(payload.postId)) {
+    const postReactionDecision = evaluatePostReaction(post);
+    if (postReactionDecision.reaction) {
+      const reactionResult = await submitPostReaction(payload.postId, postReactionDecision.reaction);
+      if (reactionResult.ok) {
+        console.log(
+          `[reaction] post postId=${payload.postId} reaction=${postReactionDecision.reaction} reason=${postReactionDecision.reason} likes=${Number(reactionResult.payload?.likesCount ?? 0)} dislikes=${Number(reactionResult.payload?.dislikesCount ?? 0)}`
+        );
+      } else {
+        console.warn(
+          `[reaction] post failed postId=${payload.postId} reaction=${postReactionDecision.reaction} reason=${postReactionDecision.reason} error="${reactionResult.error}"`
+        );
+      }
+    } else if (AGENT_RESPONSE_LOG_VERBOSE) {
+      console.log(`[reaction] post skipped postId=${payload.postId} reason=${postReactionDecision.reason}`);
+    }
+
+    const existingAnswers = await fetchAnswersByPostId(payload.postId);
+    for (const answer of existingAnswers) {
+      const answerDecision = evaluateAnswerReaction({
+        answerId: answer.id,
+        answerAgentId: answer.agentId,
+        answerContent: answer.content,
+        agentId: null
+      });
+      if (!answerDecision.reaction) {
+        if (AGENT_RESPONSE_LOG_VERBOSE) {
+          console.log(`[reaction] answer skipped answerId=${answer.id} reason=${answerDecision.reason}`);
+        }
+        continue;
+      }
+
+      const answerReactionResult = await submitAnswerReaction(payload.postId, answer.id, answerDecision.reaction);
+      if (answerReactionResult.ok) {
+        console.log(
+          `[reaction] answer answerId=${answer.id} reaction=${answerDecision.reaction} reason=${answerDecision.reason} likes=${Number(answerReactionResult.payload?.likesCount ?? 0)} dislikes=${Number(answerReactionResult.payload?.dislikesCount ?? 0)}`
+        );
+      } else {
+        console.warn(
+          `[reaction] answer failed answerId=${answer.id} reaction=${answerDecision.reaction} reason=${answerDecision.reason} error="${answerReactionResult.error}"`
+        );
+      }
+    }
+
+    reactionState.reactedPostIds.add(payload.postId);
+    await saveReactionCheckpoint();
+  } else if (AGENT_RESPONSE_LOG_VERBOSE) {
+    console.log(`[reaction] skipped all reactions for postId=${payload.postId} reason=already-reacted-for-event`);
+  }
 
   const questionText = buildQuestionPrompt(post);
   const answer = await callAgent(questionText);
@@ -344,6 +546,20 @@ async function consumeEventStream(initialAfterEventId) {
 }
 
 async function run() {
+  console.log(
+    [
+      "listener-config",
+      `appBaseUrl=${APP_BASE_URL}`,
+      `mcpUrl=${AGENT_MCP_URL}`,
+      `network=${X402_BASE_NETWORK}`,
+      `startupBackfill=${ENABLE_STARTUP_BACKFILL ? "on" : "off"}`,
+      `wikiDiscovery=${ENABLE_WIKI_DISCOVERY ? "on" : "off"}`,
+      `alwaysRespond=${(process.env.AGENT_ALWAYS_RESPOND ?? "1") !== "0" ? "on" : "off"}`,
+      `interests=${String(process.env.AGENT_INTERESTS ?? "").trim() || "none"}`,
+      `reactions=${(process.env.AGENT_ENABLE_REACTIONS ?? "1") !== "0" ? "on" : "off"}`
+    ].join(" ")
+  );
+
   if (LISTENER_STATUS_PORT > 0) {
     const statusServer = http.createServer((req, res) => {
       if (req.url !== "/health") {
@@ -378,10 +594,13 @@ async function run() {
         console.warn(`[discovery] periodic failed: ${error instanceof Error ? error.message : String(error)}`);
       });
     }, WIKI_DISCOVERY_INTERVAL_MS);
+  } else {
+    console.log("[discovery] disabled. Agent will remain on currently joined wikis (default includes w/general).");
   }
 
   let reconnectAttempts = 0;
   let checkpoint = await loadCheckpoint();
+  await loadReactionCheckpoint();
   if (checkpoint) {
     state.lastEventId = checkpoint;
     console.log(`Loaded checkpoint eventId=${checkpoint} from ${AGENT_CHECKPOINT_FILE}`);
