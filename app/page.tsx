@@ -46,20 +46,20 @@ export default async function LiveRequestsDashboard() {
                     <Link
                       href={`/question/${post.id}`}
                       aria-label={`Open question: ${post.header}`}
-                      className="absolute inset-x-0 top-0 bottom-12 z-10"
+                      className="absolute inset-0 z-10"
                     />
                     <div className="homepage-card-accent pointer-events-none absolute left-0 top-0 w-full bg-gradient-to-r from-primary via-primary/70 to-transparent" />
-                    <div className="relative z-20 mb-2 flex items-center justify-between gap-2">
+                    <div className="pointer-events-none relative z-20 mb-2 flex items-center justify-between gap-2">
                       <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] leading-none ${levelColorClass}`}>
                         {levelLabel}
                       </span>
                       <span className="text-[11px] uppercase tracking-[0.08em] leading-none text-slate-500">&gt; WINDOW: {windowMinutes}m</span>
                     </div>
 
-                    <h2 className="relative z-20 mb-2 text-[1.16rem] font-semibold leading-[1.25] text-white">{post.header}</h2>
-                    <p className="relative z-20 mb-3 line-clamp-3 text-[14px] leading-[1.45] text-slate-400">{post.content}</p>
+                    <h2 className="pointer-events-none relative z-20 mb-2 text-[1.16rem] font-semibold leading-[1.25] text-white">{post.header}</h2>
+                    <p className="pointer-events-none relative z-20 mb-3 line-clamp-3 text-[14px] leading-[1.45] text-slate-400">{post.content}</p>
                     {post.latestAnswerPreview && (
-                      <div className="relative z-20 mb-3 rounded-sm border border-white/10 bg-white/[0.02] px-2.5 py-2">
+                      <div className="pointer-events-none relative z-20 mb-3 rounded-sm border border-white/10 bg-white/[0.02] px-2.5 py-2">
                         <p className="text-[9px] uppercase tracking-[0.12em] text-slate-500">
                           Preview · {post.latestAnswerPreview.agentName}
                         </p>
@@ -69,7 +69,7 @@ export default async function LiveRequestsDashboard() {
                       </div>
                     )}
 
-                    <div className="relative z-30 ascii-divider mt-auto flex flex-nowrap items-center justify-between gap-3 pt-2 transition-colors">
+                    <div className="pointer-events-none relative z-30 ascii-divider mt-auto flex flex-nowrap items-center justify-between gap-3 pt-2 transition-colors">
                       <div className="flex shrink-0 items-center gap-2">
                         <p className="text-[9px] uppercase tracking-[0.13em] leading-none text-slate-500">&gt; BID</p>
                         <p
@@ -81,12 +81,14 @@ export default async function LiveRequestsDashboard() {
                         >
                           ${(post.requiredBidCents / 100).toFixed(2)}
                         </p>
-                        <ReactionToggle
-                          endpoint={`/api/posts/${post.id}/reactions`}
-                          initialLikes={post.likesCount}
-                          initialDislikes={post.dislikesCount}
-                          compact
-                        />
+                        <div className="pointer-events-auto">
+                          <ReactionToggle
+                            endpoint={`/api/posts/${post.id}/reactions`}
+                            initialLikes={post.likesCount}
+                            initialDislikes={post.dislikesCount}
+                            compact
+                          />
+                        </div>
                       </div>
                       <div className="min-w-0 text-right">
                         <p className="inline-flex flex-nowrap items-center justify-end gap-1 whitespace-nowrap text-[11px] leading-none">

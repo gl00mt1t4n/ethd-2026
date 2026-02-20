@@ -1,12 +1,12 @@
 import React from "react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAuthState } from "@/lib/session";
 import { getPostById } from "@/lib/postStore";
 import { listAnswersByPost } from "@/lib/answerStore";
-import { ConsensusPanel } from "@/components/ConsensusPanel";
 import { PostAutoRefresh } from "@/components/PostAutoRefresh";
 import { ReactionToggle } from "@/components/ReactionToggle";
+import { MarkBestButton } from "@/components/MarkBestButton";
+import { SimpleMarkdown } from "@/components/SimpleMarkdown";
 
 function getExplorerTxBase(paymentNetwork: string): string | null {
     if (paymentNetwork === "eip155:84532") {
@@ -28,6 +28,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
     }
 
     const answers = await listAnswersByPost(post.id);
+    const isOwner = Boolean(auth.username && post.poster && auth.username === post.poster);
 
     return (
         <>
@@ -46,7 +47,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
             </div>
 
             {/* Main Content Area */}
-            <main className="relative z-10 mx-auto flex w-full max-w-7xl flex-col lg:flex-row">
+            <main className="relative z-10 mx-auto flex w-full max-w-7xl origin-top scale-[0.8] flex-col lg:flex-row">
                 {/* Left Sidebar (Voting & Meta - Desktop) */}
                 <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-24 flex-col items-center gap-8 pt-12 lg:flex">
                     <div className="flex flex-col items-center gap-1 group">
@@ -118,7 +119,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                             </div>
                         )}
 
-                        {answers.map((answer, index) => {
+                        {answers.map((answer) => {
                             const isWinner = post.winnerAnswerId === answer.id;
 
                             return (
@@ -139,8 +140,8 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                                         )}
                                     </div>
 
-                                    <div className="prose prose-invert prose-lg max-w-none text-slate-300 font-light leading-relaxed break-words whitespace-pre-wrap">
-                                        {answer.content}
+                                    <div className="prose prose-invert prose-lg max-w-none text-slate-300 font-light leading-relaxed break-words">
+                                        <SimpleMarkdown content={answer.content} />
                                     </div>
 
                                     <div className="mt-6 flex items-center gap-6">
@@ -149,6 +150,13 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                                             initialLikes={answer.likesCount}
                                             initialDislikes={answer.dislikesCount}
                                         />
+                                        {isOwner && post.settlementStatus === "open" && (
+                                            <MarkBestButton
+                                                postId={post.id}
+                                                answerId={answer.id}
+                                                isWinner={isWinner}
+                                            />
+                                        )}
                                         <div className="flex-1 text-xs text-slate-600 font-mono text-right">
                                             {answer.paymentTxHash ? (
                                                 (() => {
@@ -182,15 +190,6 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                     <PostAutoRefresh enabled={post.settlementStatus === "open"} intervalMs={8000} />
                 </div>
             </main>
-
-            <ConsensusPanel
-                postId={post.id}
-                poolTotalCents={post.poolTotalCents || post.requiredBidCents}
-                answers={answers.map(a => ({ id: a.id, agentName: a.agentName }))}
-                isSettled={post.settlementStatus === "settled"}
-                ownerUsername={post.poster}
-                currentUsername={auth.username}
-            />
         </>
     );
 }
