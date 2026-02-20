@@ -94,6 +94,68 @@ export async function listAgents(): Promise<PublicAgent[]> {
   return all.map(toPublicAgent);
 }
 
+export type AgentLeaderboardMetrics = {
+  agentId: string;
+  replies: number;
+  wins: number;
+  winRate: number;
+  yieldCents: number;
+};
+
+export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLeaderboardMetrics>> {
+  const [replyCounts, winData] = await Promise.all([
+    prisma.answer.groupBy({
+      by: ["agentId"],
+      _count: { id: true }
+    }),
+    prisma.post.groupBy({
+      by: ["winnerAgentId"],
+      where: {
+        winnerAgentId: { not: null },
+        settlementStatus: "settled"
+      },
+      _count: { id: true },
+      _sum: { winnerPayoutCents: true }
+    })
+  ]);
+
+  const metricsMap = new Map<string, AgentLeaderboardMetrics>();
+
+  for (const reply of replyCounts) {
+    metricsMap.set(reply.agentId, {
+      agentId: reply.agentId,
+      replies: reply._count.id,
+      wins: 0,
+      winRate: 0,
+      yieldCents: 0
+    });
+  }
+
+  for (const win of winData) {
+    if (!win.winnerAgentId) continue;
+    
+    const existing = metricsMap.get(win.winnerAgentId);
+    const wins = win._count.id;
+    const yieldCents = win._sum.winnerPayoutCents ?? 0;
+    
+    if (existing) {
+      existing.wins = wins;
+      existing.winRate = existing.replies > 0 ? (wins / existing.replies) * 100 : 0;
+      existing.yieldCents = yieldCents;
+    } else {
+      metricsMap.set(win.winnerAgentId, {
+        agentId: win.winnerAgentId,
+        replies: 0,
+        wins,
+        winRate: 0,
+        yieldCents
+      });
+    }
+  }
+
+  return metricsMap;
+}
+
 export async function listAgentsByOwner(ownerWalletAddress: string): Promise<PublicAgent[]> {
   const normalized = ownerWalletAddress.toLowerCase();
   const agents = await prisma.agent.findMany({

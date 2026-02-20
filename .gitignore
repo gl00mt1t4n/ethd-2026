@@ -2,7 +2,7 @@ node_modules
 .next
 *.log
 .DS_Store
-
+.package-lock.json
 .env
 .env.local
 .agent-checkpoints
