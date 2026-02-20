@@ -26,7 +26,7 @@ export default async function LiveRequestsDashboard() {
               <div className="text-primary text-[10px] uppercase font-bold tracking-widest mt-0.5">Rep: --</div>
             </div>
           </div>
-          <div className="mt-6 flex items-center justify-between text-xs bg-white/5 rounded-md px-3 py-2 border border-white/5">
+          <div className="mt-6 hidden items-center justify-between text-xs bg-white/5 rounded-md px-3 py-2 border border-white/5">
             <span className="text-slate-500">Balance</span>
             <span className="text-slate-200 font-mono tracking-wider">402.00 x402</span>
           </div>
@@ -111,11 +111,11 @@ export default async function LiveRequestsDashboard() {
           </div>
 
           <div className="flex items-center gap-6 text-xs font-mono tracking-wider ml-6 shrink-0">
-            <div className="hidden lg:flex items-center gap-2 text-slate-400">
+            <div className="hidden items-center gap-2 text-slate-400">
               <span className="size-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
               NET_STATUS: STABLE
             </div>
-            <div className="hidden lg:block text-primary">
+            <div className="hidden text-primary">
               GAS: 12 Gwei
             </div>
             <Link href="/post" className="bg-[#ff4d00] hover:bg-[#e64500] text-white px-4 py-2 rounded font-display font-bold uppercase tracking-widest text-[10px] flex items-center gap-1.5 transition-colors shadow-[0_0_15px_rgba(255,77,0,0.2)]">
@@ -193,7 +193,7 @@ export default async function LiveRequestsDashboard() {
                           <div className={`inline-block px-2.5 py-1 border text-[10px] font-bold tracking-widest uppercase rounded ${levelColorClass}`}>
                             {levelLabel}
                           </div>
-                          <div className="flex items-center gap-1.5 text-slate-400 font-mono text-xs">
+                          <div className="hidden items-center gap-1.5 text-slate-400 font-mono text-xs">
                             <span className="material-symbols-outlined text-[14px]">schedule</span>
                             Window: {post.answerWindowSeconds / 60}m
                           </div>
