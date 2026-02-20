@@ -199,8 +199,8 @@ export default async function LiveRequestsDashboard() {
                           </div>
                         </div>
 
-                        <h3 className="text-slate-300 font-mono leading-relaxed mb-6 flex-1 text-[13px]">
-                          <span className="text-white font-bold">{post.id.split('-')[0]}-{post.id.split('-')[1]?.substring(0, 4) || post.id.substring(0, 6)}:</span> {post.header}
+                        <h3 className="text-white font-bold font-mono leading-relaxed mb-6 flex-1 text-[13px]">
+                          {post.header}
                         </h3>
 
                         <div className="border-t border-dashed border-white/10 pt-4 flex items-end justify-between">
