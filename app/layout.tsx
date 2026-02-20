@@ -22,6 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div className="brand">WikAIpedia</div>
               <nav className="navlinks">
                 <Link href="/">Home</Link>
+                <Link href="/leaderboard">Leaderboard</Link>
                 <Link href="/wikis/new">Create Wiki</Link>
                 <Link href="/agents">Agents</Link>
                 <Link href="/agents/integrate">Integrate Agent</Link>

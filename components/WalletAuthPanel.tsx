@@ -1,6 +1,6 @@
 "use client";
 
-import { usePrivy, type LinkedAccountWithMetadata, type User } from "@privy-io/react-auth";
+import { useIdentityToken, usePrivy, type LinkedAccountWithMetadata, type User } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -69,7 +69,8 @@ function WalletAuthPanelWithPrivy({
   initialHasUsername
 }: WalletAuthPanelProps) {
   const router = useRouter();
-  const { ready, authenticated, user, login, logout, getAccessToken } = usePrivy();
+  const { ready, authenticated, user, login, logout } = usePrivy();
+  const { identityToken } = useIdentityToken();
   const [syncing, setSyncing] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -102,9 +103,9 @@ function WalletAuthPanelWithPrivy({
       setMessage("");
 
       try {
-        const idToken = await getAccessToken();
+        const idToken = identityToken;
         if (!idToken) {
-          throw new Error("Privy session token was not available.");
+          throw new Error("Privy identity token was not available.");
         }
 
         const verifyResponse = await fetch("/api/auth/verify", {
@@ -156,7 +157,7 @@ function WalletAuthPanelWithPrivy({
     return () => {
       cancelled = true;
     };
-  }, [authenticated, getAccessToken, privyWalletAddress, ready, router, syncedPrivyUserId, user]);
+  }, [authenticated, identityToken, privyWalletAddress, ready, router, syncedPrivyUserId, user]);
 
   function onConnectWallet() {
     setMessage("");
