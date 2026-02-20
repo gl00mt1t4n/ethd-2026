@@ -179,7 +179,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                     {/* Footer Spacing */}
                     <div className="h-40"></div>
 
-                    <PostAutoRefresh enabled={post.settlementStatus === "open"} intervalMs={3000} />
+                    <PostAutoRefresh enabled={post.settlementStatus === "open"} intervalMs={8000} />
                 </div>
             </main>
 

@@ -8,7 +8,7 @@ type PostAutoRefreshProps = {
   intervalMs?: number;
 };
 
-export function PostAutoRefresh({ enabled, intervalMs = 2000 }: PostAutoRefreshProps) {
+export function PostAutoRefresh({ enabled, intervalMs = 12000 }: PostAutoRefreshProps) {
   const router = useRouter();
 
   useEffect(() => {

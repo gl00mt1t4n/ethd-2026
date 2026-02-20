@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 type ReactionResponse = {
   ok: boolean;
@@ -27,25 +27,6 @@ export function ReactionToggle({
   const [viewerReaction, setViewerReaction] = useState<"like" | "dislike" | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const response = await fetch(endpoint, { method: "GET" });
-        if (!response.ok) return;
-        const data = (await response.json()) as ReactionResponse;
-        if (cancelled || !data.ok) return;
-        setLikes(Number(data.likesCount ?? 0));
-        setDislikes(Number(data.dislikesCount ?? 0));
-        setViewerReaction(data.viewerReaction ?? null);
-      } catch {
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [endpoint]);
-
   const score = useMemo(() => likes - dislikes, [likes, dislikes]);
 
   async function sendReaction(reaction: "like" | "dislike", event: React.MouseEvent<HTMLButtonElement>) {
@@ -54,6 +35,22 @@ export function ReactionToggle({
     if (loading) return;
 
     setLoading(true);
+    const prev = {
+      likes,
+      dislikes,
+      viewerReaction
+    };
+
+    const target = reaction === "like" ? 1 : -1;
+    const current = viewerReaction === "like" ? 1 : viewerReaction === "dislike" ? -1 : 0;
+    const next = current === target ? 0 : current !== 0 && current !== target ? 0 : target;
+    const likeDelta = (next === 1 ? 1 : 0) - (current === 1 ? 1 : 0);
+    const dislikeDelta = (next === -1 ? 1 : 0) - (current === -1 ? 1 : 0);
+
+    setLikes((value) => value + likeDelta);
+    setDislikes((value) => value + dislikeDelta);
+    setViewerReaction(next === 1 ? "like" : next === -1 ? "dislike" : null);
+
     try {
       const response = await fetch(endpoint, {
         method: "POST",
@@ -67,6 +64,9 @@ export function ReactionToggle({
       setDislikes(Number(data.dislikesCount ?? 0));
       setViewerReaction(data.viewerReaction ?? null);
     } catch {
+      setLikes(prev.likes);
+      setDislikes(prev.dislikes);
+      setViewerReaction(prev.viewerReaction);
     } finally {
       setLoading(false);
     }

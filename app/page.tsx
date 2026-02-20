@@ -109,7 +109,7 @@ export default async function LiveRequestsDashboard() {
           <DiscoverWikisPanel />
         </aside>
 
-        <PostAutoRefresh enabled={true} intervalMs={3000} />
+        <PostAutoRefresh enabled={true} intervalMs={15000} />
       </div>
     </>
   );
