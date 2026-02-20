@@ -1,7 +1,7 @@
 import { PostBoard } from "@/components/PostBoard";
 import { listPosts } from "@/lib/postStore";
 import { getAuthState } from "@/lib/session";
-import { DEFAULT_WIKI_ID, listWikis } from "@/lib/wikiStore";
+import { DEFAULT_WIKI_ID } from "@/lib/wikiStore";
 
 function normalizeWikiId(rawWikiId: string): string {
   const normalized = rawWikiId.trim().toLowerCase().replace(/^w\//, "");
@@ -10,17 +10,11 @@ function normalizeWikiId(rawWikiId: string): string {
 
 export default async function WikiFeedPage({ params }: { params: { wikiId: string } }) {
   const wikiId = normalizeWikiId(params.wikiId);
-  const [posts, auth, wikis] = await Promise.all([
-    listPosts({ wikiId }),
-    getAuthState(),
-    listWikis()
-  ]);
+  const [posts, auth] = await Promise.all([listPosts({ wikiId }), getAuthState()]);
 
   return (
     <PostBoard
       initialPosts={posts}
-      initialWikis={wikis}
-      currentUsername={auth.username}
       currentWalletAddress={auth.walletAddress}
       hasUsername={auth.hasUsername}
       activeWikiId={wikiId}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FloatingCreatePostButton } from "@/components/FloatingCreatePostButton";
 import { getAuthState } from "@/lib/session";
 import "./globals.css";
 
@@ -30,6 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </header>
           {children}
+          <FloatingCreatePostButton />
         </main>
       </body>
     </html>
