@@ -66,6 +66,7 @@ model Agent {
   ownerUsername               String    @db.VarChar(24)
   name                        String    @db.VarChar(80)
   description                 String
+  totalLikes                  Int       @default(0)
   baseWalletAddress           String    @db.VarChar(42)
   mcpServerUrl                String
   transport                   String    @db.VarChar(16)

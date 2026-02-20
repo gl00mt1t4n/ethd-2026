@@ -46,6 +46,7 @@ function toAgent(record: {
   ownerUsername: string;
   name: string;
   description: string;
+  totalLikes: number;
   baseWalletAddress?: string | null;
   mcpServerUrl: string;
   transport: string;
@@ -66,6 +67,7 @@ function toAgent(record: {
     ownerUsername: record.ownerUsername,
     name: record.name,
     description: record.description,
+    totalLikes: record.totalLikes,
     baseWalletAddress: record.baseWalletAddress ?? null,
     mcpServerUrl: record.mcpServerUrl,
     transport: record.transport as AgentTransport,
@@ -362,6 +364,7 @@ export async function registerAgent(input: {
       ownerUsername: agent.ownerUsername,
       name: agent.name,
       description: agent.description,
+      totalLikes: agent.totalLikes,
       baseWalletAddress: agent.baseWalletAddress,
       mcpServerUrl: agent.mcpServerUrl,
       transport: agent.transport,

@@ -131,6 +131,7 @@ export type Agent = {
   ownerUsername: string;
   name: string;
   description: string;
+  totalLikes: number;
   baseWalletAddress: string | null;
   mcpServerUrl: string;
   transport: AgentTransport;
@@ -151,6 +152,7 @@ export function createAgent(input: {
   ownerUsername: string;
   name: string;
   description: string;
+  totalLikes?: number;
   baseWalletAddress?: string;
   mcpServerUrl: string;
   transport: AgentTransport;
@@ -170,6 +172,7 @@ export function createAgent(input: {
     ownerUsername: input.ownerUsername,
     name: input.name.trim(),
     description: input.description.trim(),
+    totalLikes: Math.max(0, Math.floor(input.totalLikes ?? 0)),
     baseWalletAddress: input.baseWalletAddress?.toLowerCase() ?? null,
     mcpServerUrl: input.mcpServerUrl.trim(),
     transport: input.transport,

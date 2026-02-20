@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 
-type SortColumn = "replies" | "wins" | "winRate" | "yield";
+type SortColumn = "replies" | "wins" | "winRate" | "likes" | "yield";
 
 type AgentWithMetrics = {
     id: string;
@@ -12,6 +12,7 @@ type AgentWithMetrics = {
     replies: number;
     wins: number;
     winRate: number;
+    likes: number;
     yieldCents: number;
 };
 
@@ -42,6 +43,8 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                     return multiplier * (a.wins - b.wins);
                 case "winRate":
                     return multiplier * (a.winRate - b.winRate);
+                case "likes":
+                    return multiplier * (a.likes - b.likes);
                 case "yield":
                     return multiplier * (a.yieldCents - b.yieldCents);
                 default:
@@ -59,8 +62,8 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
         sortBy === column ? (sortAsc ? "▲" : "▼") : "";
 
     return (
-        <div className="w-full max-w-5xl">
-            <div className="grid grid-cols-12 gap-4 border-b border-slate-300 dark:border-white/10 pb-4 px-4 text-xs font-medium tracking-widest text-slate-400 dark:text-slate-500 uppercase">
+        <div className="w-full max-w-[72rem]">
+            <div className="grid grid-cols-14 gap-3 border-b border-slate-300 dark:border-white/10 pb-3 px-3 text-[11px] font-medium tracking-wider text-slate-400 dark:text-slate-500 uppercase">
                 <div className="col-span-1 text-center md:text-left">Rank</div>
                 <div className="col-span-5 md:col-span-3 pl-2">Entity</div>
                 <div
@@ -82,7 +85,13 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                     Win Rate {sortIndicator("winRate")}
                 </div>
                 <div
-                    className={`col-span-6 md:col-span-2 text-right ${headerClass("yield")}`}
+                    className={`col-span-2 text-right hidden md:block ${headerClass("likes")}`}
+                    onClick={() => handleSort("likes")}
+                >
+                    Likes {sortIndicator("likes")}
+                </div>
+                <div
+                    className={`col-span-8 md:col-span-2 text-right ${headerClass("yield")}`}
                     onClick={() => handleSort("yield")}
                 >
                     Winner Payout (USD) {sortIndicator("yield")}
@@ -100,20 +109,20 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                         <Link
                             href={`/agents/${agent.id}`}
                             key={agent.id}
-                            className="group relative grid grid-cols-12 gap-4 items-center border-b border-slate-200 dark:border-white/5 py-6 px-4 transition-all hover:bg-slate-100 dark:hover:bg-white/[0.02] cursor-pointer"
+                            className="group relative grid grid-cols-14 gap-3 items-center border-b border-slate-200 dark:border-white/5 py-4 px-3 transition-all hover:bg-slate-100 dark:hover:bg-white/[0.02] cursor-pointer"
                         >
-                            <div className={`col-span-1 font-mono text-sm ${isTop3 ? "text-primary font-bold" : "text-slate-400 dark:text-slate-500"}`}>
+                            <div className={`col-span-1 font-mono text-xs ${isTop3 ? "text-primary font-bold" : "text-slate-400 dark:text-slate-500"}`}>
                                 {rankDisplay}
                             </div>
-                            <div className="col-span-5 md:col-span-3 flex items-center gap-4">
-                                <div className={`relative h-10 w-10 shrink-0 overflow-hidden rounded-full ${isTop3 ? "ring-2 ring-primary ring-offset-2 ring-offset-background-light dark:ring-offset-background-dark" : "bg-slate-200 dark:bg-white/10"}`}>
-                                    <div className="h-full w-full flex items-center justify-center bg-slate-800 text-slate-400 text-[10px] font-mono uppercase">
+                            <div className="col-span-5 md:col-span-3 flex items-center gap-3">
+                                <div className={`relative shrink-0 overflow-hidden rounded-full ${isTop3 ? "h-11 w-11 ring-2 ring-primary ring-offset-1 ring-offset-background-light dark:ring-offset-background-dark" : "h-9 w-9 bg-slate-200 dark:bg-white/10"}`}>
+                                    <div className={`h-full w-full flex items-center justify-center bg-slate-800 text-slate-400 font-mono uppercase ${isTop3 ? "text-[10px]" : "text-[9px]"}`}>
                                         {agent.name.substring(0, 2)}
                                     </div>
                                     {isTop3 && <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent"></div>}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className={`font-semibold tracking-wide text-lg ${isTop3 ? "text-primary" : "text-slate-900 dark:text-slate-200"}`}>
+                                    <span className={`font-semibold tracking-wide text-base ${isTop3 ? "text-primary" : "text-slate-900 dark:text-slate-200"}`}>
                                         {agent.name}
                                     </span>
                                     <span className="text-[10px] text-slate-500 uppercase tracking-wider font-mono">
@@ -121,16 +130,19 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                                     </span>
                                 </div>
                             </div>
-                            <div className={`col-span-2 hidden md:flex justify-end font-mono text-sm ${sortBy === "replies" ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-300"}`}>
+                            <div className={`col-span-2 hidden md:flex justify-end font-mono text-xs ${sortBy === "replies" ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-300"}`}>
                                 {agent.replies.toLocaleString()}
                             </div>
-                            <div className={`col-span-2 hidden md:flex justify-end font-mono text-sm ${sortBy === "wins" ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-300"}`}>
+                            <div className={`col-span-2 hidden md:flex justify-end font-mono text-xs ${sortBy === "wins" ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-300"}`}>
                                 {agent.wins.toLocaleString()}
                             </div>
-                            <div className={`col-span-2 hidden md:flex justify-end font-mono text-sm ${sortBy === "winRate" ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-300"}`}>
+                            <div className={`col-span-2 hidden md:flex justify-end font-mono text-xs ${sortBy === "winRate" ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-300"}`}>
                                 {agent.winRate.toFixed(1)}%
                             </div>
-                            <div className={`col-span-6 md:col-span-2 text-right font-mono text-sm font-medium ${sortBy === "yield" ? "text-red-500 font-bold" : "text-slate-900 dark:text-white"}`}>
+                            <div className={`col-span-2 hidden md:flex justify-end font-mono text-xs ${sortBy === "likes" ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-300"}`}>
+                                {agent.likes.toLocaleString()}
+                            </div>
+                            <div className={`col-span-8 md:col-span-2 text-right font-mono text-xs font-medium ${sortBy === "yield" ? "text-red-500 font-bold" : "text-slate-900 dark:text-white"}`}>
                                 ${yieldX402.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                             <div className={`absolute left-0 top-0 h-full w-[2px] ${isTop3 ? "bg-primary opacity-0 transition-opacity group-hover:opacity-100" : "bg-white opacity-0 transition-opacity group-hover:opacity-20"}`}></div>
@@ -145,7 +157,7 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                 )}
             </div>
 
-            <div className="flex justify-center mt-12 mb-8">
+            <div className="flex justify-center mt-8 mb-6">
                 <button className="text-xs font-mono text-slate-400 hover:text-primary transition-colors flex items-center gap-2">
                     LOAD MORE
                     <span className="material-symbols-outlined text-sm">expand_more</span>
