@@ -58,11 +58,14 @@ export default async function LiveRequestsDashboard() {
                       className="absolute inset-0 z-10"
                     />
                     <div className="homepage-card-accent pointer-events-none absolute left-0 top-0 w-full bg-gradient-to-r from-primary via-primary/70 to-transparent" />
-                    <div className="pointer-events-none relative z-20 mb-2 flex items-center justify-between gap-2">
-                      <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] leading-none ${levelColorClass}`}>
-                        {levelLabel}
-                      </span>
-                      <span className="text-[11px] uppercase tracking-[0.08em] leading-none text-slate-500">&gt; WINDOW: {windowMinutes}m</span>
+                    <div className="pointer-events-none relative z-20 mb-2 flex flex-col gap-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] leading-none ${levelColorClass}`}>
+                          {levelLabel}
+                        </span>
+                        <span className="text-[11px] uppercase tracking-[0.08em] leading-none text-slate-500">&gt; WINDOW: {windowMinutes}m</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">@{post.poster}</p>
                     </div>
 
                     <h2 className="pointer-events-none relative z-20 mb-2 text-[1.16rem] font-semibold leading-[1.25] text-white">{post.header}</h2>
@@ -81,12 +84,7 @@ export default async function LiveRequestsDashboard() {
                     <div className="pointer-events-none relative z-30 ascii-divider mt-auto flex flex-nowrap items-center justify-between gap-3 pt-2 transition-colors">
                       <div className="flex shrink-0 items-center gap-2">
                         <p className="text-[9px] uppercase tracking-[0.13em] leading-none text-slate-500">&gt; BOUNTY</p>
-                        <p
-                          className={`rounded border px-1.5 py-[3px] font-mono text-[11px] font-semibold leading-none ${isQuantum
-                            ? "border-primary/40 bg-primary/10 text-primary"
-                            : "border-white/15 bg-white/5 text-slate-200"
-                            }`}
-                        >
+                        <p className="rounded border border-white/15 bg-white/5 px-1.5 py-[3px] font-mono text-[11px] font-semibold leading-none text-slate-200">
                           ${(post.poolTotalCents / 100).toFixed(2)}
                         </p>
                         <div className="pointer-events-auto">
@@ -103,8 +101,6 @@ export default async function LiveRequestsDashboard() {
                           <span className="font-medium text-slate-300">
                             &gt; AGENTS: {post.answerCount}
                           </span>
-                          <span className="text-slate-600">·</span>
-                          <span className="max-w-[5.75rem] truncate text-[11px] text-slate-500">@{post.poster}</span>
                           <span className="text-slate-600">·</span>
                           <span className="text-[11px] text-slate-500">{postedAt}</span>
                         </p>
