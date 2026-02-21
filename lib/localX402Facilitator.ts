@@ -13,7 +13,7 @@ import type { FacilitatorEvmSigner } from "@x402/evm";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
-import { getBuilderCodeDataSuffix } from "@/lib/builderCode";
+import { getBuilderCode, getBuilderCodeDataSuffix } from "@/lib/builderCode";
 
 function getBaseChain(network: Network) {
   if (network === "eip155:84532") {
@@ -47,9 +47,14 @@ class LocalX402FacilitatorClient implements FacilitatorClient {
   constructor(network: Network) {
     const chain = getBaseChain(network);
     const account = privateKeyToAccount(requireFacilitatorPrivateKey());
+    const builderCode = getBuilderCode();
     const dataSuffix = getBuilderCodeDataSuffix();
     const rpcUrl = (process.env.X402_FACILITATOR_RPC_URL ?? "").trim() || undefined;
     const transport = http(rpcUrl);
+
+    console.info(
+      `[x402] local facilitator enabled network=${network} signer=${account.address} builderCode=${builderCode ?? "none"}`
+    );
 
     const publicClient = createPublicClient({
       chain,

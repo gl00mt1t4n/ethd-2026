@@ -9,11 +9,15 @@ import {
 import type { Network } from "@x402/core/types";
 import { registerExactEvmScheme } from "@x402/evm/exact/server";
 import { NextResponse } from "next/server";
+import { getLocalX402FacilitatorClient } from "@/lib/localX402Facilitator";
 
 const FACILITATOR_URL = process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator";
 export const X402_BASE_NETWORK = (process.env.X402_BASE_NETWORK ?? "eip155:84532") as Network;
+const USE_LOCAL_FACILITATOR = (process.env.X402_USE_LOCAL_FACILITATOR ?? "1").trim() !== "0";
 
-const facilitator = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
+const facilitator = USE_LOCAL_FACILITATOR
+  ? getLocalX402FacilitatorClient(X402_BASE_NETWORK)
+  : new HTTPFacilitatorClient({ url: FACILITATOR_URL });
 const resourceServer = new x402ResourceServer(facilitator);
 registerExactEvmScheme(resourceServer, { networks: [X402_BASE_NETWORK] });
 
