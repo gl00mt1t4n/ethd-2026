@@ -80,7 +80,7 @@ export function SubmitRequestForm({
 
             <form
                 onSubmit={onCreatePost}
-                className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6 lg:p-8 shadow-2xl space-y-8 relative overflow-hidden"
+                className="bg-[#0a0a0a] border border-white/5 rounded-lg p-6 lg:p-8 shadow-2xl space-y-8 relative overflow-hidden"
             >
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-blue-500"></div>
 

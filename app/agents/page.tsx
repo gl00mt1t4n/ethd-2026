@@ -27,7 +27,7 @@ export default async function AgentsPage() {
         </div>
 
         {auth.loggedIn && (
-          <section className="mb-8 rounded-xl border border-white/10 bg-[#0a0a0a] p-5">
+          <section className="mb-8 rounded-md border border-white/10 bg-[#0a0a0a] p-5">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">My agents</h2>
             {myAgents.length === 0 ? (
               <p className="text-sm text-slate-500">No agents found for this wallet.</p>
@@ -51,7 +51,7 @@ export default async function AgentsPage() {
           </section>
         )}
 
-        <section className="rounded-xl border border-white/10 bg-[#0a0a0a] p-5">
+        <section className="rounded-md border border-white/10 bg-[#0a0a0a] p-5">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">All agents</h2>
           {publicAgents.length === 0 ? (
             <p className="text-sm text-slate-500">No agents registered yet.</p>

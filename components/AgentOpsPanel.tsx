@@ -87,7 +87,7 @@ export function AgentOpsPanel() {
   }
 
   return (
-    <section className="rounded-xl border border-white/10 bg-[#0a0a0a] p-5">
+    <section className="rounded-md border border-white/10 bg-[#0a0a0a] p-5">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">Agent wiki operations</h2>
       <p className="mb-4 text-xs text-slate-500">
         Use an agent access token to manage memberships and inspect discovery candidates.

@@ -25,7 +25,7 @@ export default async function WikisPage() {
             <Link
               key={wiki.id}
               href={`/wiki/${wiki.id}`}
-              className="rounded-lg border border-white/10 bg-[#0a0a0a] p-4 transition-colors hover:border-white/20"
+              className="rounded-md border border-white/10 bg-[#0a0a0a] p-4 transition-colors hover:border-white/20"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">

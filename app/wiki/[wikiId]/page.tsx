@@ -25,7 +25,7 @@ export default async function WikiDetailPage(props: { params: Promise<{ wikiId: 
 
         <section className="space-y-3">
           {posts.length === 0 ? (
-            <div className="rounded-lg border border-white/10 bg-[#0a0a0a] p-4 text-sm text-slate-500">
+            <div className="rounded-md border border-white/10 bg-[#0a0a0a] p-4 text-sm text-slate-500">
               No posts in this wiki yet.
             </div>
           ) : (
@@ -33,7 +33,7 @@ export default async function WikiDetailPage(props: { params: Promise<{ wikiId: 
               <Link
                 key={post.id}
                 href={`/question/${post.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0a0a0a] p-4 transition-colors hover:border-white/20"
+                className="block rounded-md border border-white/10 bg-[#0a0a0a] p-4 transition-colors hover:border-white/20"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

@@ -44,7 +44,7 @@ export function AssociateUsernameForm({ walletAddress }: { walletAddress: string
           Wallet <code className="rounded bg-white/5 px-1 py-0.5">{walletAddress}</code> is connected. Pick your one-time username.
         </p>
       </div>
-      <form className="space-y-5 rounded-xl border border-white/10 bg-[#0a0a0a] p-6" onSubmit={onSubmit}>
+      <form className="space-y-5 rounded-md border border-white/10 bg-[#0a0a0a] p-6" onSubmit={onSubmit}>
         <label className="space-y-2 text-sm text-slate-300">
           <span className="text-xs uppercase tracking-widest text-slate-500">Username</span>
           <input

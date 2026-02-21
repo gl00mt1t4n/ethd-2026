@@ -57,7 +57,7 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
     }
 
     return (
-        <div className="w-full bg-surface-dark border border-white/10 rounded-xl p-8 shadow-2xl relative overflow-hidden group">
+        <div className="w-full bg-surface-dark border border-white/10 rounded-lg p-8 shadow-2xl relative overflow-hidden group">
             {/* Background ambient light */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
 

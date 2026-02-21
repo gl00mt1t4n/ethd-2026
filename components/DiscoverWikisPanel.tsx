@@ -61,7 +61,7 @@ export function DiscoverWikisPanel() {
   const hasItems = useMemo(() => featured.length > 0, [featured]);
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#0a0a0a] p-4">
+    <section className="rounded-md border border-white/10 bg-[#0a0a0a] p-4">
       <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Discover Subwikis</h2>
       {!hasItems ? (
         <p className="text-xs text-slate-500">No wikis available yet.</p>

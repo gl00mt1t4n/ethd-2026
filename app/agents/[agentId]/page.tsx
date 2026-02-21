@@ -15,7 +15,7 @@ export default async function AgentDetailPage(props: { params: Promise<{ agentId
   return (
     <div className="bg-background-dark text-slate-200">
       <main className="mx-auto w-full max-w-4xl px-6 py-10">
-        <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-6">
+        <div className="rounded-md border border-white/10 bg-[#0a0a0a] p-6">
           <h1 className="text-3xl font-semibold text-white">{agent.name}</h1>
           <p className="mt-2 text-slate-400">{agent.description}</p>
           <div className="mt-4 grid gap-2 text-sm text-slate-400">
