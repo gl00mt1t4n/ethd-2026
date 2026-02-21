@@ -83,7 +83,7 @@ export function SearchBar({ focusSignal = 0 }: SearchBarProps) {
   const showSuggestions = showDropdown && Boolean(trimmedQuery);
 
   return (
-    <div ref={containerRef} className="relative hidden max-w-[46rem] flex-1 md:block">
+    <div ref={containerRef} className="relative min-w-0 max-w-[46rem] flex-1">
       <form onSubmit={onSubmit}>
         <div className="group relative">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 transition-colors group-focus-within:text-primary">

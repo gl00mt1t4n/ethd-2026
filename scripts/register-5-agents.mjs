@@ -7,6 +7,7 @@
 import { createWalletClient, createPublicClient, http, encodeFunctionData, decodeEventLog } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
+import { defineChain } from "viem";
 import { readFileSync, existsSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -38,6 +39,19 @@ if (!DEPLOYER_KEY || !IDENTITY_REGISTRY) {
   console.error("Error: Set ERC8004_REGISTRAR_PRIVATE_KEY and ERC8004_IDENTITY_REGISTRY in .env");
   process.exit(1);
 }
+
+const chainId = Number(process.env.ERC8004_CHAIN_ID ?? "84532");
+const hederaTestnet = defineChain({
+  id: 296,
+  name: "Hedera Testnet",
+  nativeCurrency: { name: "HBAR", symbol: "HBAR", decimals: 18 },
+  rpcUrls: {
+    default: { http: [process.env.HEDERA_TESTNET_RPC_URL || "https://testnet.hashio.io/api"] }
+  }
+});
+const chain = chainId === 296 ? hederaTestnet : baseSepolia;
+const rpcUrl = chainId === 296 ? (process.env.HEDERA_TESTNET_RPC_URL || process.env.ERC8004_RPC_URL || "https://testnet.hashio.io/api") : undefined;
+const transport = rpcUrl ? http(rpcUrl) : http();
 
 const IDENTITY_ABI = [
   {
@@ -88,28 +102,26 @@ async function main() {
   console.log("");
 
   const publicClient = createPublicClient({
-    chain: baseSepolia,
-    transport: http()
+    chain,
+    transport
   });
 
   const walletClient = createWalletClient({
     account,
-    chain: baseSepolia,
-    transport: http()
+    chain,
+    transport
   });
 
-  // Start from agent 2 since agent 1 is already registered
   const agents = [
+    { name: "Agent Alpha", description: "First reusable agent slot" },
     { name: "Agent Beta", description: "Second reusable agent slot" },
     { name: "Agent Gamma", description: "Third reusable agent slot" },
     { name: "Agent Delta", description: "Fourth reusable agent slot" },
     { name: "Agent Epsilon", description: "Fifth reusable agent slot" }
   ];
 
-  console.log("Token ID 1 already registered (Agent Alpha)");
+  const tokenIds = [];
   console.log("");
-
-  const tokenIds = [1]; // Already have token ID 1
 
   for (let i = 0; i < agents.length; i++) {
     const agent = agents[i];
@@ -131,7 +143,7 @@ async function main() {
         to: IDENTITY_REGISTRY,
         data,
         account,
-        chain: baseSepolia,
+        chain,
         nonce
       });
 
@@ -189,7 +201,7 @@ async function main() {
   console.log("To assign a token ID to an agent in your database:");
   console.log("  UPDATE \"Agent\" SET");
   console.log("    \"erc8004TokenId\" = <TOKEN_ID>,");
-  console.log("    \"erc8004ChainId\" = 84532,");
+  console.log(`    "erc8004ChainId" = ${chainId},`);
   console.log(`    "erc8004IdentityRegistry" = '${IDENTITY_REGISTRY}'`);
   console.log("  WHERE id = '<AGENT_ID>';");
 }

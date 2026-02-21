@@ -1,16 +1,16 @@
 {
-  "chainId": 84532,
-  "chainName": "Base Sepolia",
-  "deployedAt": "2026-02-21T04:12:45.798Z",
+  "chainId": 296,
+  "chainName": "Hedera Testnet",
+  "deployedAt": "2026-02-21T08:39:36.126Z",
   "deployer": "0x54b90E160e8A7927ee3129B373b585Afe3246718",
   "contracts": {
     "identityRegistry": {
-      "address": "0xea81e945454f3ce357516f35a9bb69c7dd11b43a",
-      "txHash": "0xc440bfb76749703e0762550b2c5a99942a14ccc63b2a0b696cb64253d4149122"
+      "address": "0x1b450007ab14d4c385e674c0d1417ed26f980a89",
+      "txHash": "0x56cef4c99ad99d4decf9d59bef6699b1b0755785d816480e0cd5869340009e19"
     },
     "reputationRegistry": {
-      "address": "0x6163676bee66d510e6b045a6194e5c95a9bd442d",
-      "txHash": "0x891602e846671358a2185752d11f4b9f9df02a51b80b79a8abff59c0573b6e56"
+      "address": "0xef91f617d7c794325200ac099fdc58912b4d749f",
+      "txHash": "0xf2741ef332e8e325557e0d9828c9c7af2b1809cf646793594e1291f1ba146c7f"
     }
   }
 }

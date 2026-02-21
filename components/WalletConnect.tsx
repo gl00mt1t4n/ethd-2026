@@ -178,7 +178,7 @@ export function WalletConnect({
     // Loading state
     if (!ready) {
         return (
-            <button className="hidden md:flex group relative items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5 px-5 py-1.5 opacity-50 cursor-not-allowed">
+            <button className="flex group relative items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5 px-4 py-1.5 opacity-50 cursor-not-allowed md:px-5">
                 <span className="relative flex items-center gap-2 text-xs font-semibold tracking-wide text-white uppercase">
                     Loading...
                 </span>
@@ -195,7 +195,7 @@ export function WalletConnect({
                 </div>
 
                 <div className="flex items-center justify-center gap-2">
-                    <div className="flex flex-col items-end hidden md:flex">
+                    <div className="flex flex-col items-end">
                         <span className="text-xs font-bold text-white leading-none">
                             {username ? `@${username}` : (walletAddress ? `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}` : "Connected")}
                         </span>
@@ -219,7 +219,7 @@ export function WalletConnect({
     }
 
     return (
-        <button onClick={onConnectWallet} className="hidden md:flex group relative items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5 px-5 py-1.5 transition-all hover:border-primary/50 hover:bg-primary/10">
+        <button onClick={onConnectWallet} className="flex group relative items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5 px-4 py-1.5 transition-all hover:border-primary/50 hover:bg-primary/10 md:px-5">
             <span className="relative flex items-center gap-2 text-xs font-semibold tracking-wide text-slate-900 dark:text-white uppercase shrink-0">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse"></span>
                 Connect Wallet
