@@ -46,6 +46,41 @@ type SwapStatusRequest = {
   txHash: string;
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isPrepareFundingRequest(value: unknown): value is PrepareFundingRequest {
+  if (!isRecord(value)) return false;
+  return (
+    value.action === "prepare" &&
+    typeof value.tokenIn === "string" &&
+    typeof value.amountIn === "string" &&
+    typeof value.walletAddress === "string" &&
+    (value.slippageTolerance === undefined || typeof value.slippageTolerance === "number")
+  );
+}
+
+function isBuildSwapRequest(value: unknown): value is BuildSwapRequest {
+  if (!isRecord(value)) return false;
+  return (
+    value.action === "swapTx" &&
+    typeof value.walletAddress === "string" &&
+    isRecord(value.quote) &&
+    (value.permitData === undefined || value.permitData === null || isRecord(value.permitData)) &&
+    (value.signature === undefined || value.signature === null || typeof value.signature === "string")
+  );
+}
+
+function isSwapStatusRequest(value: unknown): value is SwapStatusRequest {
+  if (!isRecord(value)) return false;
+  return (
+    value.action === "swapStatus" &&
+    (typeof value.chainId === "number" || typeof value.chainId === "string") &&
+    typeof value.txHash === "string"
+  );
+}
+
 function asError(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
@@ -315,24 +350,24 @@ async function handleSwapStatus(agentId: string, body: SwapStatusRequest) {
 
 export async function POST(request: Request, props: { params: Promise<{ agentId: string }> }) {
   const params = await props.params;
-  const payload = (await request.json().catch(() => null)) as
-    | PrepareFundingRequest
-    | BuildSwapRequest
-    | null;
+  const payload = await request.json().catch(() => null);
 
   if (!payload || typeof payload !== "object") {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const action = String(payload.action ?? "").trim();
-  if (action === "prepare") {
-    return handlePrepare(params.agentId, payload as PrepareFundingRequest);
+  if (isPrepareFundingRequest(payload)) {
+    return handlePrepare(params.agentId, payload);
   }
-  if (action === "swapTx") {
-    return handleSwapTx(params.agentId, payload as BuildSwapRequest);
+  if (isBuildSwapRequest(payload)) {
+    return handleSwapTx(params.agentId, payload);
   }
-  if (action === "swapStatus") {
-    return handleSwapStatus(params.agentId, payload as SwapStatusRequest);
+  if (isSwapStatusRequest(payload)) {
+    return handleSwapStatus(params.agentId, {
+      action: "swapStatus",
+      chainId: Number(payload.chainId),
+      txHash: payload.txHash
+    });
   }
 
   return NextResponse.json({ error: "Unsupported funding action." }, { status: 400 });

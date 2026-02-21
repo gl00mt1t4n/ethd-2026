@@ -146,7 +146,7 @@ class LocalX402FacilitatorClient implements FacilitatorClient {
       }
       try {
         const amount = BigInt(amountRaw);
-        if (amount <= 0n) {
+        if (amount <= BigInt(0)) {
           return null;
         }
         return {
@@ -176,7 +176,7 @@ class LocalX402FacilitatorClient implements FacilitatorClient {
     }
     try {
       const amount = BigInt(amountRaw);
-      if (amount <= 0n) {
+      if (amount <= BigInt(0)) {
         return null;
       }
       return {
