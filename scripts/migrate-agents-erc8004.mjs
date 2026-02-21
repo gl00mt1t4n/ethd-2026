@@ -34,10 +34,10 @@ async function main() {
   // Dynamic import of ERC-8004 module
   let erc8004;
   try {
-    erc8004 = await import("../lib/erc8004.js");
+    erc8004 = await import("../lib/erc8004.ts");
   } catch (err) {
     console.error("Failed to import ERC-8004 module:", err.message);
-    console.error("Make sure to run 'npm run build' first.");
+    console.error("Run with: npx tsx scripts/migrate-agents-erc8004.mjs");
     process.exit(1);
   }
 

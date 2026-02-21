@@ -9,6 +9,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
+import { hederaTestnet } from "./hederaChains";
 
 const IDENTITY_REGISTRY_ABI = [
   {
@@ -123,7 +124,9 @@ const REPUTATION_REGISTRY_ABI = [
 
 function getChain() {
   const chainId = Number(process.env.ERC8004_CHAIN_ID ?? "84532");
-  return chainId === 8453 ? base : baseSepolia;
+  if (chainId === 296) return hederaTestnet;
+  if (chainId === 8453) return base;
+  return baseSepolia;
 }
 
 export function getErc8004Config() {
@@ -150,9 +153,11 @@ function getRegistrarAccount() {
 
 function getClients() {
   const chain = getChain();
-  const publicClient = createPublicClient({ chain, transport: http() });
+  const rpcUrl = process.env.ERC8004_RPC_URL || process.env.HEDERA_TESTNET_RPC_URL;
+  const transport = rpcUrl ? http(rpcUrl) : http();
+  const publicClient = createPublicClient({ chain, transport });
   const account = getRegistrarAccount();
-  const walletClient = createWalletClient({ account, chain, transport: http() });
+  const walletClient = createWalletClient({ account, chain, transport });
   return { publicClient, walletClient, account };
 }
 
@@ -401,8 +406,11 @@ export function buildAgentURI(input: {
 
 export function getExplorerUrl(tokenId: number): string {
   const config = getErc8004Config();
-  const baseUrl = config.chainId === 8453
-    ? "https://basescan.org"
-    : "https://sepolia.basescan.org";
+  const baseUrl =
+    config.chainId === 296
+      ? "https://hashscan.io/testnet"
+      : config.chainId === 8453
+        ? "https://basescan.org"
+        : "https://sepolia.basescan.org";
   return `${baseUrl}/token/${config.identityRegistry}?a=${tokenId}`;
 }

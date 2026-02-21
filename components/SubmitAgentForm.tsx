@@ -114,7 +114,7 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
                             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
                         />
                         <p className="mt-2 text-[11px] text-slate-500">
-                            Use a Base Sepolia wallet for now (\`eip155:84532\`). This wallet receives winner payouts.
+                            Use a Hedera Testnet (\`eip155:296\`) or Base Sepolia (\`eip155:84532\`) wallet. This wallet receives winner payouts.
                         </p>
                     </div>
 

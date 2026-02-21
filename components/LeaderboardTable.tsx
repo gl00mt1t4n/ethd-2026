@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 
-type SortColumn = "replies" | "wins" | "winRate" | "likes" | "yield";
+type SortColumn = "replies" | "wins" | "winRate" | "erc8004Rep" | "yield";
 
 type AgentWithMetrics = {
     id: string;
@@ -12,7 +12,7 @@ type AgentWithMetrics = {
     replies: number;
     wins: number;
     winRate: number;
-    likes: number;
+    erc8004Rep: number;
     yieldCents: number;
 };
 
@@ -24,7 +24,7 @@ const INITIAL_COUNT = 5;
 const LOAD_MORE_COUNT = 5;
 
 export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
-    const [sortBy, setSortBy] = useState<SortColumn>("yield");
+    const [sortBy, setSortBy] = useState<SortColumn>("erc8004Rep");
     const [sortAsc, setSortAsc] = useState(false);
     const [displayCount, setDisplayCount] = useState(INITIAL_COUNT);
 
@@ -50,8 +50,8 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                     return multiplier * (a.wins - b.wins);
                 case "winRate":
                     return multiplier * (a.winRate - b.winRate);
-                case "likes":
-                    return multiplier * (a.likes - b.likes);
+                case "erc8004Rep":
+                    return multiplier * (a.erc8004Rep - b.erc8004Rep);
                 case "yield":
                     return multiplier * (a.yieldCents - b.yieldCents);
                 default:
@@ -92,10 +92,10 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                     Win Rate {sortIndicator("winRate")}
                 </div>
                 <div
-                    className={`col-span-2 text-right hidden md:block ${headerClass("likes")}`}
-                    onClick={() => handleSort("likes")}
+                    className={`col-span-2 text-right hidden md:block ${headerClass("erc8004Rep")}`}
+                    onClick={() => handleSort("erc8004Rep")}
                 >
-                    Likes {sortIndicator("likes")}
+                    On-Chain Rep {sortIndicator("erc8004Rep")}
                 </div>
                 <div
                     className={`col-span-8 md:col-span-2 text-right ${headerClass("yield")}`}
@@ -146,8 +146,8 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                             <div className={`col-span-2 hidden md:flex justify-end font-mono text-xs ${sortBy === "winRate" ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-300"}`}>
                                 {agent.winRate.toFixed(1)}%
                             </div>
-                            <div className={`col-span-2 hidden md:flex justify-end font-mono text-xs ${sortBy === "likes" ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-300"}`}>
-                                {agent.likes.toLocaleString()}
+                            <div className={`col-span-2 hidden md:flex justify-end font-mono text-xs ${sortBy === "erc8004Rep" ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-300"}`}>
+                                {agent.erc8004Rep.toLocaleString()}
                             </div>
                             <div className={`col-span-8 md:col-span-2 text-right font-mono text-xs font-medium ${sortBy === "yield" ? "text-red-500 font-bold" : "text-slate-900 dark:text-white"}`}>
                                 ${yieldX402.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

@@ -30,7 +30,7 @@
     "agent:openclaw:fund:swarm": "node scripts/fund-openclaw-swarm-wallets.mjs",
     "agent:openclaw:topup:swarm": "node scripts/topup-openclaw-swarm-wallets.mjs",
     "agent:run:fixed": "node scripts/run-fixed-agents.mjs",
-    "agent:migrate:erc8004": "node scripts/migrate-agents-erc8004.mjs",
+    "agent:migrate:erc8004": "tsx scripts/migrate-agents-erc8004.mjs",
     "reputation:submit": "node scripts/submit-reputation.mjs",
     "erc8004:deploy": "node scripts/deploy-erc8004.mjs"
   },
@@ -59,6 +59,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "tsx": "^4.19.0",
     "typescript": "^5"
   }
 }
