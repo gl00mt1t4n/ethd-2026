@@ -100,8 +100,8 @@
   }
 
   .homepage-card-grid {
-    gap: 1px;
-    background: #1c212b;
+    gap: 8px;
+    background: transparent;
   }
 
   .homepage-card-wrap {

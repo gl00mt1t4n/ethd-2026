@@ -81,7 +81,9 @@ export default async function AgentsPage() {
                   <li key={agent.id} className="rounded-md border border-white/10 bg-[#121212] px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="font-medium text-white">{agent.name}</p>
+                        <Link href={`/agents/${agent.id}`} className="font-medium text-white hover:text-primary">
+                          {agent.name}
+                        </Link>
                         <p className="mt-1 text-xs text-slate-500">{agent.mcpServerUrl}</p>
                         <div className="mt-2 rounded border border-white/10 bg-black/20 p-2">
                           <p className="text-[10px] uppercase tracking-wider text-slate-500">Listener logs</p>
@@ -115,7 +117,9 @@ export default async function AgentsPage() {
                 <li key={agent.id} className="rounded-md border border-white/10 bg-[#121212] px-4 py-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-white">{agent.name}</p>
+                      <Link href={`/agents/${agent.id}`} className="font-medium text-white hover:text-primary">
+                        {agent.name}
+                      </Link>
                       <p className="line-clamp-2 text-sm text-slate-400">{agent.description}</p>
                       <p className="mt-1 text-xs text-slate-500">Owner: @{agent.ownerUsername}</p>
                       <div className="mt-2 rounded border border-white/10 bg-black/20 p-2">

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { appendAgentActionLog, generateAgentActionId } from "@/lib/agentActionLogStore";
 import { findAgentByAccessToken } from "@/lib/agentStore";
 import { addAnswer, listAnswersByPost } from "@/lib/answerStore";
 import { getEscrowPayToAddress } from "@/lib/baseSettlement";
@@ -17,6 +18,20 @@ function getBearerToken(request: Request): string | null {
   return header.slice(7).trim();
 }
 
+function getAgentActionId(request: Request): string {
+  const raw = String(request.headers.get("x-agent-action-id") ?? "").trim();
+  if (!raw) {
+    return generateAgentActionId();
+  }
+  return raw.slice(0, 96);
+}
+
+async function safeLog(input: Parameters<typeof appendAgentActionLog>[0]): Promise<void> {
+  try {
+    await appendAgentActionLog(input);
+  } catch {}
+}
+
 export async function GET(_request: Request, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
   const answers = await listAnswersByPost(params.postId);
@@ -25,6 +40,7 @@ export async function GET(_request: Request, props: { params: Promise<{ postId: 
 
 export async function POST(request: Request, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
+  const actionId = getAgentActionId(request);
   const token = getBearerToken(request);
   if (!token) {
     return NextResponse.json({ error: "Missing Bearer agent token." }, { status: 401 });
@@ -116,7 +132,23 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
     );
   }
 
-  return handlePaidRoute(
+  const route = `/api/posts/${params.postId}/answers`;
+
+  await safeLog({
+    actionId,
+    route,
+    method: "POST",
+    stage: "paid_submit_attempt",
+    outcome: "info",
+    agentId: agent.id,
+    agentName: agent.name,
+    postId: params.postId,
+    bidAmountCents,
+    paymentNetwork: X402_BASE_NETWORK,
+    metadata: { payTo }
+  });
+
+  const response = await handlePaidRoute(
     request,
     {
       accepts: {
@@ -152,6 +184,21 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
         return NextResponse.json({ error: result.error }, { status: 400 });
       }
 
+      await safeLog({
+        actionId,
+        route,
+        method: "POST",
+        stage: "paid_submit_success",
+        outcome: "success",
+        agentId: agent.id,
+        agentName: agent.name,
+        postId: params.postId,
+        bidAmountCents,
+        paymentNetwork: X402_BASE_NETWORK,
+        paymentTxHash: result.answer.paymentTxHash,
+        httpStatus: 201
+      });
+
       return NextResponse.json(
         {
           ok: true,
@@ -164,4 +211,29 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
       );
     }
   );
+
+  if (!response.ok) {
+    const payload = await response.clone().json().catch(() => null);
+    const errorMessage =
+      payload && typeof payload === "object" && typeof (payload as { error?: unknown }).error === "string"
+        ? (payload as { error: string }).error
+        : `HTTP ${response.status}`;
+    await safeLog({
+      actionId,
+      route,
+      method: "POST",
+      stage: "paid_submit_failed",
+      outcome: "failure",
+      agentId: agent.id,
+      agentName: agent.name,
+      postId: params.postId,
+      bidAmountCents,
+      paymentNetwork: X402_BASE_NETWORK,
+      httpStatus: response.status,
+      errorMessage
+    });
+  }
+
+  response.headers.set("x-agent-action-id", actionId);
+  return response;
 }

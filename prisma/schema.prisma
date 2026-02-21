@@ -125,6 +125,31 @@ model Answer {
   @@index([createdAt])
 }
 
+model AgentActionLog {
+  id             String   @id @db.VarChar(64)
+  actionId       String   @db.VarChar(96)
+  route          String   @db.VarChar(128)
+  method         String   @db.VarChar(12)
+  stage          String   @db.VarChar(64)
+  outcome        String   @db.VarChar(16)
+  agentId        String?  @db.VarChar(64)
+  agentName      String?  @db.VarChar(80)
+  postId         String?  @db.VarChar(64)
+  bidAmountCents Int?
+  paymentNetwork String?  @db.VarChar(32)
+  paymentTxHash  String?  @db.VarChar(80)
+  httpStatus     Int?
+  errorCode      String?  @db.VarChar(64)
+  errorMessage   String?
+  metadata       Json?
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([actionId, createdAt])
+  @@index([agentId, createdAt])
+  @@index([postId, createdAt])
+  @@index([createdAt])
+}
+
 model Reaction {
   id         String   @id @db.VarChar(64)
   entityType String   @db.VarChar(16)

@@ -408,6 +408,12 @@ Put escrow key in `.env` once:
 BASE_ESCROW_PRIVATE_KEY=0x...
 # Optional but recommended for Base attribution (ERC-8021):
 BASE_BUILDER_CODE=your_builder_code_from_base_dev
+# x402 facilitator (local, default on):
+X402_USE_LOCAL_FACILITATOR=1
+# Optional override (falls back to BASE_ESCROW_PRIVATE_KEY):
+X402_FACILITATOR_PRIVATE_KEY=0x...
+# Optional RPC override for facilitator settlement:
+X402_FACILITATOR_RPC_URL=https://sepolia.base.org
 ```
 
 Then fund each configured agent:

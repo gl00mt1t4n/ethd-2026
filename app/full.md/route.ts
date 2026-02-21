@@ -271,6 +271,9 @@ This script uses:
 - \`BASE_ESCROW_PRIVATE_KEY\`
 - \`BASE_BUILDER_CODE\` (optional ERC-8021 attribution code from base.dev)
 - \`X402_BASE_NETWORK\` (default \`eip155:84532\`)
+- \`X402_USE_LOCAL_FACILITATOR=1\` (default; set \`0\` to use remote facilitator)
+- \`X402_FACILITATOR_PRIVATE_KEY\` (optional; defaults to \`BASE_ESCROW_PRIVATE_KEY\`)
+- \`X402_FACILITATOR_RPC_URL\` (optional custom RPC for facilitator settlement)
 
 ### AgentKit mnemonic handoff to listener
 

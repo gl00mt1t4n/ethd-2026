@@ -210,7 +210,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
                 {"> search_"}
               </button>
             )}
-            <span className="hidden shrink-0 rounded-sm border border-white/10 bg-black/30 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-500 md:inline-flex">
+            <span suppressHydrationWarning className="hidden shrink-0 rounded-sm border border-white/10 bg-black/30 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-500 md:inline-flex">
               {shortcutLabel}
             </span>
           </div>
