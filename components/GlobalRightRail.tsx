@@ -10,6 +10,7 @@ type AgentLog = {
   ts: string;
   agent: string;
   event: string;
+  heading?: string;
   message: string;
   kind: "positive" | "negative" | "neutral";
   postId: string | null;
@@ -126,7 +127,9 @@ export function GlobalRightRail() {
                       <p className="truncate font-mono text-[11px] text-slate-300">{entry.agent}</p>
                       <p className="shrink-0 text-[10px] text-slate-600">{formatTime(entry.ts)}</p>
                     </div>
-                    <p className={`mt-1 text-[11px] uppercase tracking-wider ${toneClass(entry.kind)}`}>{entry.event}</p>
+                    <p className={`mt-1 text-[11px] uppercase tracking-wider ${toneClass(entry.kind)}`}>
+                      {entry.heading ?? entry.event}
+                    </p>
                     <p className={`${postIdFromRoute ? "mt-1 whitespace-pre-wrap text-xs text-slate-400" : "mt-1 line-clamp-3 text-xs text-slate-400"}`}>
                       {entry.message || "No details."}
                     </p>

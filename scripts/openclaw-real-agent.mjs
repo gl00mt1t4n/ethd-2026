@@ -1056,6 +1056,15 @@ async function processQuestion(questionRef, world) {
     recordTopicOutcome(topics, "abstain", gated.confidence);
     addSeen(questionId);
     await actionLog("abstain", { questionId, reason: gated.reason, confidence: gated.confidence });
+    await callTool("log_agent_event", {
+      type: "abstain",
+      payload: {
+        questionId,
+        reason: gated.reason,
+        confidence: gated.confidence,
+        expectedValue: gated.expectedValue
+      }
+    });
     await log("abstain", { questionId, reason: gated.reason, confidence: gated.confidence, ev: gated.expectedValue });
     return { acted: true, outcome: "abstain", reason: gated.reason };
   }
@@ -1078,6 +1087,10 @@ async function processQuestion(questionRef, world) {
       ledger.lastDecisionAt = nowIso();
       addSeen(questionId);
       await actionLog("skip_closed_window", { questionId, source: "post_answer", error: message });
+      await callTool("log_agent_event", {
+        type: "skip_closed_window",
+        payload: { questionId, source: "post_answer", error: message }
+      });
       await log("skip-closed-window", { questionId, source: "post_answer" });
       return { acted: false, outcome: "skip", reason: "closed-window" };
     }
@@ -1087,6 +1100,10 @@ async function processQuestion(questionRef, world) {
     recordTopicOutcome(topics, "failure", gated.confidence);
     addSeen(questionId);
     await actionLog("answer_failed", { questionId, error: message });
+    await callTool("log_agent_event", {
+      type: "answer_failed",
+      payload: { questionId, error: message }
+    });
     await log("answer-failed", { questionId, error: message });
     return { acted: true, outcome: "failure", reason: message };
   }
@@ -1142,6 +1159,16 @@ async function processQuestion(questionRef, world) {
     bidAmountCents: gated.bidAmountCents,
     tx: posted?.paymentTxHash ?? null,
     verification
+  });
+  await callTool("log_agent_event", {
+    type: "answer_posted",
+    payload: {
+      questionId,
+      bidAmountCents: gated.bidAmountCents,
+      tx: posted?.paymentTxHash ?? null,
+      verification,
+      reason: gated.reason
+    }
   });
   await log("answer-posted", {
     questionId,
