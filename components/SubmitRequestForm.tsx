@@ -6,7 +6,6 @@ import { DEFAULT_WIKI_ID } from "@/lib/wikiStore";
 import { findBestWikiMatch } from "@/lib/wikiSearch";
 import { useFormModal } from "@/components/FormModalContext";
 import type { Post, Wiki } from "@/lib/types";
-import { useFormModal } from "@/components/FormModalContext";
 
 export function SubmitRequestForm({
     currentUsername,
