@@ -48,6 +48,31 @@ const DISCOVERY_INTERVAL_MS = Math.max(30000, Number(process.env.REAL_AGENT_DISC
 const MAX_EVENT_REACTIONS_PER_LOOP = Math.max(1, Number(process.env.REAL_AGENT_MAX_EVENT_REACTIONS_PER_LOOP ?? 2));
 const MAX_EVENT_BODY_CHARS = Math.max(200, Number(process.env.REAL_AGENT_MAX_EVENT_BODY_CHARS ?? 280));
 const PERSONA_JSON = String(process.env.REAL_AGENT_PERSONA_JSON ?? "").trim();
+const STACKEXCHANGE_KEY = String(process.env.STACKEXCHANGE_KEY ?? "").trim();
+const TAVILY_API_KEY = String(process.env.TAVILY_API_KEY ?? "").trim();
+const ENABLE_WEB_BROWSING =
+  String(process.env.REAL_AGENT_ENABLE_WEB_BROWSING ?? (TAVILY_API_KEY ? "1" : "0")).trim() === "1";
+const MAX_WEB_SEARCH_QUERIES = Math.max(0, Number(process.env.REAL_AGENT_MAX_WEB_SEARCH_QUERIES ?? 1));
+const MAX_WEB_RESULTS_PER_QUERY = Math.max(1, Number(process.env.REAL_AGENT_MAX_WEB_RESULTS_PER_QUERY ?? 3));
+const MAX_WEB_FETCHES = Math.max(1, Number(process.env.REAL_AGENT_MAX_WEB_FETCHES ?? 2));
+const WEB_SEARCH_TIMEOUT_MS = Math.max(1500, Number(process.env.REAL_AGENT_WEB_SEARCH_TIMEOUT_MS ?? 7000));
+const WEB_FETCH_TIMEOUT_MS = Math.max(1500, Number(process.env.REAL_AGENT_WEB_FETCH_TIMEOUT_MS ?? 6000));
+const WEB_FETCH_MAX_BYTES = Math.max(4096, Number(process.env.REAL_AGENT_WEB_FETCH_MAX_BYTES ?? 32000));
+const WEB_SUMMARY_MAX_CHARS = Math.max(180, Number(process.env.REAL_AGENT_WEB_SUMMARY_MAX_CHARS ?? 500));
+const WEB_ALLOWED_HOSTS = String(process.env.REAL_AGENT_WEB_ALLOWED_HOSTS ?? "")
+  .split(",")
+  .map((value) => value.trim().toLowerCase())
+  .filter(Boolean);
+const WEB_BLOCKED_HOSTS = new Set(
+  String(
+    process.env.REAL_AGENT_WEB_BLOCKED_HOSTS ??
+      "localhost,127.0.0.1,0.0.0.0,169.254.169.254,metadata.google.internal"
+  )
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean)
+);
+const ROBOTS_CACHE_TTL_MS = Math.max(60000, Number(process.env.REAL_AGENT_ROBOTS_CACHE_TTL_MS ?? 3600000));
 
 const runtime = {
   running: true,
@@ -56,6 +81,7 @@ const runtime = {
   inFlightQuestions: new Set(),
   eventSeen: new Map(),
   reactionWindow: { minuteKey: "", count: 0 },
+  robotsCache: new Map(),
   memory: {
     schemaVersion: 2,
     loops: 0,
@@ -391,6 +417,240 @@ async function callOpenClaw(messages, temperature = 0.2) {
     throw new Error("OpenClaw returned empty content.");
   }
   return text.trim();
+}
+
+function safeHostnameFromUrl(url) {
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function isHostAllowed(url) {
+  const host = safeHostnameFromUrl(url);
+  if (!host) return false;
+  if (WEB_BLOCKED_HOSTS.has(host)) return false;
+  if (WEB_ALLOWED_HOSTS.length === 0) return true;
+  return WEB_ALLOWED_HOSTS.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
+}
+
+function htmlToText(html) {
+  return String(html ?? "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<\/(p|div|h1|h2|h3|h4|h5|h6|li|tr|section|article|main|header|footer)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+async function fetchTextWithLimit(url, timeoutMs, maxBytes) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "WikAIpediaRealAgent/1.0 (+https://wikaipedia.ai)"
+      }
+    });
+
+    const contentType = String(response.headers.get("content-type") ?? "").toLowerCase();
+    if (!response.ok) {
+      return { ok: false, status: response.status, error: `http_${response.status}`, contentType, body: "" };
+    }
+    if (!/text\/|application\/(json|xml|xhtml\+xml)/.test(contentType)) {
+      return {
+        ok: false,
+        status: response.status,
+        error: `unsupported_content_type:${contentType}`,
+        contentType,
+        body: ""
+      };
+    }
+
+    const body = await response.text();
+    const clipped = body.length > maxBytes ? body.slice(0, maxBytes) : body;
+    return { ok: true, status: response.status, contentType, body: clipped };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      error: error instanceof Error ? error.message : String(error),
+      contentType: "",
+      body: ""
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function extractRobotsRules(raw) {
+  const lines = String(raw ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"));
+  const rules = [];
+  let applies = false;
+  for (const line of lines) {
+    const [rawKey, ...rest] = line.split(":");
+    if (!rawKey || rest.length === 0) continue;
+    const key = rawKey.trim().toLowerCase();
+    const value = rest.join(":").trim();
+    if (key === "user-agent") {
+      applies = value === "*" || value.toLowerCase().includes("wikaipediarealagent");
+      continue;
+    }
+    if (!applies) continue;
+    if (key === "disallow" && value) {
+      rules.push(value);
+    }
+  }
+  return rules;
+}
+
+async function robotsAllows(url) {
+  try {
+    const parsed = new URL(url);
+    const origin = parsed.origin;
+    const now = Date.now();
+    const cached = runtime.robotsCache.get(origin);
+    if (cached && now - cached.ts < ROBOTS_CACHE_TTL_MS) {
+      return !cached.rules.some((rule) => parsed.pathname.startsWith(rule));
+    }
+
+    const robotsUrl = `${origin}/robots.txt`;
+    const robots = await fetchTextWithLimit(robotsUrl, 2500, 12000);
+    const rules = robots.ok ? extractRobotsRules(robots.body) : [];
+    runtime.robotsCache.set(origin, { ts: now, rules });
+    return !rules.some((rule) => parsed.pathname.startsWith(rule));
+  } catch {
+    return true;
+  }
+}
+
+async function searchWeb(query, limit = MAX_WEB_RESULTS_PER_QUERY) {
+  if (!ENABLE_WEB_BROWSING || !TAVILY_API_KEY) {
+    return { ok: false, reason: "browsing-disabled", results: [] };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), WEB_SEARCH_TIMEOUT_MS);
+  try {
+    const response = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: TAVILY_API_KEY,
+        query,
+        max_results: limit,
+        search_depth: "basic",
+        include_answer: false,
+        include_images: false,
+        include_raw_content: false
+      })
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      return { ok: false, reason: `tavily_${response.status}`, error: limitString(text, 220), results: [] };
+    }
+    const json = await response.json().catch(() => ({}));
+    const results = Array.isArray(json?.results)
+      ? json.results
+          .map((item) => ({
+            url: String(item?.url ?? ""),
+            title: limitString(item?.title ?? "", 160),
+            snippet: limitString(item?.content ?? "", 260),
+            score: Number(item?.score ?? 0)
+          }))
+          .filter((item) => item.url && isHostAllowed(item.url))
+          .slice(0, limit)
+      : [];
+    return { ok: true, results };
+  } catch (error) {
+    return { ok: false, reason: "tavily_error", error: error instanceof Error ? error.message : String(error), results: [] };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchUrlTool(url) {
+  if (!isHostAllowed(url)) {
+    return { ok: false, url, reason: "blocked-host" };
+  }
+  const allowedByRobots = await robotsAllows(url);
+  if (!allowedByRobots) {
+    return { ok: false, url, reason: "robots-disallow" };
+  }
+  const response = await fetchTextWithLimit(url, WEB_FETCH_TIMEOUT_MS, WEB_FETCH_MAX_BYTES);
+  if (!response.ok) {
+    return { ok: false, url, reason: response.error ?? "fetch-failed", status: response.status };
+  }
+
+  const isHtml = response.contentType.includes("text/html") || response.contentType.includes("xhtml");
+  const text = limitString(isHtml ? htmlToText(response.body) : response.body, WEB_FETCH_MAX_BYTES);
+  const title = isHtml ? response.body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "" : "";
+  return {
+    ok: true,
+    url,
+    status: response.status,
+    title: limitString(htmlToText(title), 160),
+    textExcerpt: limitString(text, WEB_FETCH_MAX_BYTES)
+  };
+}
+
+async function summarizeSources(question, docs) {
+  const compactDocs = Array.isArray(docs)
+    ? docs.map((doc) => ({
+        url: String(doc?.url ?? ""),
+        title: limitString(doc?.title ?? "", 120),
+        text: limitString(doc?.textExcerpt ?? "", 1200)
+      }))
+    : [];
+  if (!compactDocs.length) {
+    return null;
+  }
+
+  const prompt = [
+    "Summarize external evidence for an autonomous agent answer decision.",
+    "Return JSON only.",
+    'Schema: {"summary":"string","claims":[{"text":"string","sourceUrl":"string"}],"uncertainty":"low|medium|high"}',
+    `Question: ${question?.header ?? ""} ${question?.content ?? ""}`,
+    `Sources: ${JSON.stringify(compactDocs)}`
+  ].join("\n");
+
+  const text = await callOpenClaw(
+    [
+      { role: "system", content: "Return strict JSON only." },
+      { role: "user", content: prompt }
+    ],
+    0.06
+  );
+  const parsed = parseJsonObject(text);
+  if (!parsed || typeof parsed !== "object") return null;
+  return {
+    summary: limitString(parsed.summary ?? "", WEB_SUMMARY_MAX_CHARS),
+    claims: Array.isArray(parsed.claims)
+      ? parsed.claims
+          .map((claim) => ({
+            text: limitString(claim?.text ?? "", 180),
+            sourceUrl: limitString(claim?.sourceUrl ?? "", 240)
+          }))
+          .slice(0, 4)
+      : [],
+    uncertainty: ["low", "medium", "high"].includes(String(parsed.uncertainty ?? ""))
+      ? String(parsed.uncertainty)
+      : "medium"
+  };
 }
 
 function isAuthError(error) {
@@ -911,6 +1171,7 @@ async function researchEvidence(question, topics, plan) {
       const result = await callTool("research_stackexchange", {
         query,
         tags: topics,
+        key: STACKEXCHANGE_KEY || undefined,
         limit: RESEARCH_ITEMS_PER_QUERY
       });
       const items = Array.isArray(result?.items) ? result.items : [];
@@ -931,6 +1192,80 @@ async function researchEvidence(question, topics, plan) {
       });
     }
   }
+
+  if (ENABLE_WEB_BROWSING && TAVILY_API_KEY && MAX_WEB_SEARCH_QUERIES > 0) {
+    const webQueries = queries.slice(0, MAX_WEB_SEARCH_QUERIES);
+    let fetchedCount = 0;
+    for (const query of webQueries) {
+      const searchResult = await searchWeb(query, MAX_WEB_RESULTS_PER_QUERY);
+      await actionLog("web-search", {
+        query,
+        ok: searchResult.ok,
+        reason: searchResult.reason ?? null,
+        resultCount: Array.isArray(searchResult.results) ? searchResult.results.length : 0
+      });
+
+      if (!searchResult.ok) {
+        evidence.push({
+          query,
+          web: true,
+          error: searchResult.error ?? searchResult.reason ?? "search-failed",
+          items: []
+        });
+        continue;
+      }
+
+      const fetchedDocs = [];
+      for (const hit of searchResult.results) {
+        if (fetchedCount >= MAX_WEB_FETCHES) break;
+        const fetched = await fetchUrlTool(hit.url);
+        fetchedCount += 1;
+        await actionLog("web-fetch", {
+          url: hit.url,
+          ok: fetched.ok,
+          reason: fetched.reason ?? null,
+          status: fetched.status ?? null
+        });
+        if (fetched.ok) {
+          fetchedDocs.push({
+            url: fetched.url,
+            title: fetched.title || hit.title,
+            textExcerpt: fetched.textExcerpt
+          });
+        }
+      }
+
+      let webSummary = null;
+      if (fetchedDocs.length > 0) {
+        try {
+          webSummary = await summarizeSources(question, fetchedDocs);
+          await actionLog("web-summary", {
+            query,
+            ok: Boolean(webSummary),
+            docs: fetchedDocs.length
+          });
+        } catch (error) {
+          await actionLog("web-summary", {
+            query,
+            ok: false,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+
+      evidence.push({
+        query,
+        web: true,
+        items: searchResult.results,
+        fetchedDocs: fetchedDocs.map((doc) => ({
+          url: doc.url,
+          title: limitString(doc.title, 120)
+        })),
+        summary: webSummary
+      });
+    }
+  }
+
   return evidence;
 }
 
@@ -1309,7 +1644,13 @@ async function main() {
     maxActionsPerLoop: MAX_ACTIONS_PER_LOOP,
     minConfidence: MIN_CONFIDENCE_TO_ANSWER,
     minEv: MIN_EV_SCORE_TO_BID,
-    revisitMinutes: REVISIT_MINUTES
+    revisitMinutes: REVISIT_MINUTES,
+    browsing: {
+      enabled: ENABLE_WEB_BROWSING,
+      provider: ENABLE_WEB_BROWSING ? "tavily" : "disabled",
+      maxSearchQueries: MAX_WEB_SEARCH_QUERIES,
+      maxFetches: MAX_WEB_FETCHES
+    }
   });
 
   const streamLoop = runEventStreamLoop().catch(async (error) => {

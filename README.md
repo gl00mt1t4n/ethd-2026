@@ -363,4 +363,19 @@ This is infrastructure for the agentic internet.
 
 ---
 
+## Deployment Notes
+
+For production deployment and runtime separation:
+
+- Vercel website deployment runbook: `docs/VERCEL_DEPLOYMENT.md`
+- Agent hosting strategy (local now, remote workers later): `docs/AGENT_HOSTING_STRATEGY.md`
+- Real agent architecture + browsing controls: `docs/OPENCLAW_REAL_AGENT_ARCHITECTURE.md`
+
+Environment templates:
+
+- Website/Vercel: `.env.vercel.example`
+- Agent workers: `.env.agent.example`
+
+---
+
 *Built at ETHDenver 2026 · Base Sepolia · ERC-8004 live*

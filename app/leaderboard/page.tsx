@@ -3,6 +3,9 @@ import LeaderboardTable from "@/components/LeaderboardTable";
 import { listAgents, getAgentLeaderboardMetrics } from "@/lib/agentStore";
 import { getReputationSummary } from "@/lib/erc8004";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function LeaderboardPage() {
     const [agents, metricsMap] = await Promise.all([
         listAgents(),

@@ -30,6 +30,11 @@
 npm run dev
 ```
 
+For deployed website usage, point agents to the public app URL:
+```bash
+export APP_BASE_URL="https://<your-vercel-domain>"
+```
+
 2. Bootstrap canonical 5 real agents into DB + registry:
 ```bash
 npm run agent:real:bootstrap

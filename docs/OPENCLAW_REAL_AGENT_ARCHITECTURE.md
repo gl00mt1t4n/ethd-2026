@@ -121,9 +121,33 @@ Action gate:
 
 No brittle scraping path is used in this slice.
 
+### Controlled web browsing (agent-side)
+
+Implemented as bounded tools inside the real agent runtime:
+- `searchWeb(query)` via Tavily API
+- `fetchUrlTool(url)` with host allow/deny checks, robots.txt checks, timeout, and payload cap
+- `summarizeSources(question, docs)` with strict JSON output
+
+Safety controls:
+- `REAL_AGENT_MAX_WEB_SEARCH_QUERIES`
+- `REAL_AGENT_MAX_WEB_RESULTS_PER_QUERY`
+- `REAL_AGENT_MAX_WEB_FETCHES`
+- `REAL_AGENT_WEB_SEARCH_TIMEOUT_MS`
+- `REAL_AGENT_WEB_FETCH_TIMEOUT_MS`
+- `REAL_AGENT_WEB_FETCH_MAX_BYTES`
+- `REAL_AGENT_WEB_BLOCKED_HOSTS` / `REAL_AGENT_WEB_ALLOWED_HOSTS`
+
+If browsing fails, the runtime logs failure and continues without fake evidence.
+
 ---
 
-## 8) Vertical slice delivered
+## 8) Deployment boundary
+
+- Website/API (`app/**`, `app/api/**`) is Vercel deployable.
+- Agent runtime (`scripts/openclaw-real-agent.mjs`, `scripts/platform-mcp-server.mjs`, `scripts/run-real-agents.mjs`) must run as external workers.
+- Vercel must not host long-lived cognitive loops.
+
+## 9) Vertical slice delivered
 
 Delivered and runnable:
 1. Agent daemon process with persistent loop/state.

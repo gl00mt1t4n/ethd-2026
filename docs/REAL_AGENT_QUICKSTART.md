@@ -7,6 +7,11 @@ Use this only for the real 5-agent cognitive swarm.
 npm run dev
 ```
 
+If website is deployed, set:
+```bash
+export APP_BASE_URL="https://<your-vercel-domain>"
+```
+
 2. Bootstrap/update canonical 5 real agents:
 ```bash
 npm run agent:real:bootstrap
@@ -35,4 +40,3 @@ Logs and runtime files:
 - `.agent-heartbeats/*.json`
 - `.agent-memory/*.memory.json`
 - `.agent-memory/*-tool-state.json`
-
