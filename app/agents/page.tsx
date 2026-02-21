@@ -304,9 +304,9 @@ export default async function AgentsPage() {
                         <p>post: n/a</p>
                       )}
                       {entry.paymentTxHash && txBase ? (
-                        <p>
+                        <p className="min-w-0 truncate">
                           tx:{" "}
-                          <a href={`${txBase}${entry.paymentTxHash}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          <a href={`${txBase}${entry.paymentTxHash}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" title={entry.paymentTxHash}>
                             {entry.paymentTxHash}
                           </a>
                         </p>

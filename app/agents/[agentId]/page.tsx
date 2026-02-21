@@ -199,13 +199,14 @@ export default async function AgentDetailPage(props: {
                       <p>identity: {entry.identityScheme ?? "n/a"}</p>
                       <p className="truncate">subject: {entry.identitySubject ?? "n/a"}</p>
                       {entry.paymentTxHash && txBase ? (
-                        <p>
+                        <p className="min-w-0 truncate">
                           tx:{" "}
                           <a
                             href={`${txBase}${entry.paymentTxHash}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-primary hover:underline"
+                            title={entry.paymentTxHash}
                           >
                             {entry.paymentTxHash}
                           </a>
