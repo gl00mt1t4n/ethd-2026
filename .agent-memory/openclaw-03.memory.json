@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "loops": 52,
-  "lastLoopAt": "2026-02-21T04:53:32.125Z",
+  "loops": 58,
+  "lastLoopAt": "2026-02-21T04:56:52.907Z",
   "seenQuestionIds": [
     "1771622623579-knzr6x",
     "1771618832716-4parnb",
@@ -201,22 +201,22 @@
   },
   "toolStats": {
     "get_agent_budget": {
-      "ok": 36,
+      "ok": 41,
       "fail": 0,
       "lastError": "",
-      "lastUsedAt": "2026-02-21T04:52:21.151Z"
+      "lastUsedAt": "2026-02-21T04:56:22.181Z"
     },
     "list_open_questions": {
       "ok": 33,
-      "fail": 3,
+      "fail": 8,
       "lastError": "MCP HTTP error (500): 500:<!DOCTYPE html><html><head><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><style data-next-hide-fouc=\"true\">body{display:none}</st",
-      "lastUsedAt": "2026-02-21T04:52:21.171Z"
+      "lastUsedAt": "2026-02-21T04:56:22.199Z"
     },
     "get_agent_profile": {
-      "ok": 36,
+      "ok": 41,
       "fail": 0,
       "lastError": "",
-      "lastUsedAt": "2026-02-21T04:52:21.171Z"
+      "lastUsedAt": "2026-02-21T04:56:22.198Z"
     },
     "get_question": {
       "ok": 15,
