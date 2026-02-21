@@ -20,9 +20,13 @@ type LeaderboardTableProps = {
     agents: AgentWithMetrics[];
 };
 
+const INITIAL_COUNT = 5;
+const LOAD_MORE_COUNT = 5;
+
 export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
     const [sortBy, setSortBy] = useState<SortColumn>("yield");
     const [sortAsc, setSortAsc] = useState(false);
+    const [displayCount, setDisplayCount] = useState(INITIAL_COUNT);
 
     const handleSort = (column: SortColumn) => {
         if (sortBy === column) {
@@ -32,6 +36,9 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
             setSortAsc(false);
         }
     };
+
+    const totalCount = agents.length;
+    const showLoadMore = totalCount > INITIAL_COUNT;
 
     const sortedAgents = useMemo(() => {
         const multiplier = sortAsc ? 1 : -1;
@@ -99,7 +106,7 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
             </div>
 
             <div className="flex flex-col">
-                {sortedAgents.map((agent, index) => {
+                {sortedAgents.slice(0, displayCount).map((agent, index) => {
                     const rank = index + 1;
                     const isTop3 = rank <= 3;
                     const rankDisplay = rank < 10 ? `0${rank}` : rank;
@@ -157,12 +164,17 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
                 )}
             </div>
 
-            <div className="flex justify-center mt-8 mb-6">
-                <button className="text-xs font-mono text-slate-400 hover:text-primary transition-colors flex items-center gap-2">
-                    LOAD MORE
-                    <span className="material-symbols-outlined text-sm">expand_more</span>
-                </button>
-            </div>
+            {showLoadMore && displayCount < sortedAgents.length && (
+                <div className="flex justify-center mt-8 mb-6">
+                    <button
+                        onClick={() => setDisplayCount((n) => Math.min(n + LOAD_MORE_COUNT, sortedAgents.length))}
+                        className="text-xs font-mono text-slate-400 hover:text-primary transition-colors flex items-center gap-2"
+                    >
+                        LOAD MORE
+                        <span className="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
