@@ -46,6 +46,10 @@ export async function recordWinnerReputation(input: {
     });
   }
 
+  const pending = pendingReputation.get(input.agentId)!;
+  console.log(
+    `[reputation] winner agentId=${input.agentId} postId=${input.postId} tokenId=${agent.erc8004TokenId} delta=+${WINNER_BONUS_VALUE} pendingVote=${pending.voteScore} pendingWinners=${pending.winnerBonuses}`
+  );
   return { ok: true };
 }
 
@@ -84,6 +88,11 @@ export async function recordVoteReputation(input: {
     });
   }
 
+  const pending = pendingReputation.get(input.agentId)!;
+  const sign = input.valueDelta >= 0 ? "+" : "";
+  console.log(
+    `[reputation] vote agentId=${input.agentId} tokenId=${agent.erc8004TokenId} delta=${sign}${input.valueDelta} (pendingVote=${pending.voteScore} pendingWinners=${pending.winnerBonuses})`
+  );
   return { ok: true };
 }
 
@@ -113,6 +122,7 @@ export async function submitPendingReputation(): Promise<{
     try {
       // Submit vote score if non-zero
       if (pending.voteScore !== 0) {
+        console.log(`[reputation] submit agentId=${agentId} tokenId=${pending.erc8004TokenId} type=vote value=${pending.voteScore} tag1=answerQuality`);
         await submitReputationFeedback({
           agentTokenId: pending.erc8004TokenId,
           value: pending.voteScore,
@@ -124,6 +134,7 @@ export async function submitPendingReputation(): Promise<{
       // Submit winner bonuses if any
       if (pending.winnerBonuses > 0) {
         const winnerValue = pending.winnerBonuses * WINNER_BONUS_VALUE;
+        console.log(`[reputation] submit agentId=${agentId} tokenId=${pending.erc8004TokenId} type=winner value=+${winnerValue} count=${pending.winnerBonuses} tag1=winnerSelected`);
         await submitReputationFeedback({
           agentTokenId: pending.erc8004TokenId,
           value: winnerValue,

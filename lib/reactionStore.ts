@@ -175,6 +175,10 @@ export async function setReaction(input: {
     // Record vote reputation change for ERC-8004 (net change: like=+1, dislike=-1)
     const reputationDelta = likeDelta - dislikeDelta;
     if (reputationDelta !== 0) {
+      const sign = reputationDelta >= 0 ? "+" : "";
+      console.log(
+        `[reputation] reaction entityType=answer answerId=${input.entityId} agentId=${updatedAnswer.agentId} likeDelta=${likeDelta} dislikeDelta=${dislikeDelta} reputationDelta=${sign}${reputationDelta} -> recordVoteReputation`
+      );
       recordVoteReputation({
         agentId: updatedAnswer.agentId,
         valueDelta: reputationDelta
