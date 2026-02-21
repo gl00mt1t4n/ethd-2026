@@ -1,6 +1,7 @@
 import { encodeFunctionData, http, createWalletClient, createPublicClient, parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
+import { getBuilderCodeDataSuffix } from "@/lib/builderCode";
 
 const USDC_ERC20_ABI = [
   {
@@ -65,6 +66,7 @@ export async function disburseWinnerPayout(input: {
   const to = input.to as `0x${string}`;
   const usdcAddress = getUsdcAddress();
   const amount = parseUnits((input.amountCents / 100).toFixed(2), 6);
+  const dataSuffix = getBuilderCodeDataSuffix();
 
   const walletClient = createWalletClient({ account, chain, transport: http() });
   const publicClient = createPublicClient({ chain, transport: http() });
@@ -78,6 +80,7 @@ export async function disburseWinnerPayout(input: {
   const txHash = await walletClient.sendTransaction({
     to: usdcAddress,
     data,
+    dataSuffix,
     account,
     chain
   });

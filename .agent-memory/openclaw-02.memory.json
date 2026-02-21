@@ -1,0 +1,309 @@
+{
+  "schemaVersion": 2,
+  "loops": 58,
+  "lastLoopAt": "2026-02-21T04:56:17.547Z",
+  "seenQuestionIds": [
+    "1771620775116-rh9pi3",
+    "1771642588988-we9f5t",
+    "1771618832716-4parnb",
+    "1771646236756-iq1z7k",
+    "1771623413474-j264pe",
+    "1771626048927-molyc2",
+    "1771646559697-1v7rfx",
+    "1771641889150-5z6cpf",
+    "1771622623579-knzr6x",
+    "1771622800388-vl2tp7",
+    "1771648202587-fucle9",
+    "1771648521203-5ur9xn",
+    "1771649175907-j3br08",
+    "1771649242925-rwb2kk",
+    "1771649304242-01ad1m"
+  ],
+  "questionLedger": {
+    "1771646236756-iq1z7k": {
+      "firstSeenAt": "2026-02-21T04:21:06.039Z",
+      "lastSeenAt": "2026-02-21T04:34:07.994Z",
+      "lastDecisionAt": "2026-02-21T04:21:07.922Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771646559697-1v7rfx": {
+      "firstSeenAt": "2026-02-21T04:21:06.039Z",
+      "lastSeenAt": "2026-02-21T04:34:07.995Z",
+      "lastDecisionAt": "2026-02-21T04:21:09.072Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771642588988-we9f5t": {
+      "firstSeenAt": "2026-02-21T04:21:06.039Z",
+      "lastSeenAt": "2026-02-21T04:34:07.992Z",
+      "lastDecisionAt": "2026-02-21T04:21:07.078Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771641889150-5z6cpf": {
+      "firstSeenAt": "2026-02-21T04:21:06.039Z",
+      "lastSeenAt": "2026-02-21T04:34:07.993Z",
+      "lastDecisionAt": "2026-02-21T04:21:09.461Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771626048927-molyc2": {
+      "firstSeenAt": "2026-02-21T04:21:06.039Z",
+      "lastSeenAt": "2026-02-21T04:34:07.992Z",
+      "lastDecisionAt": "2026-02-21T04:21:08.711Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771623413474-j264pe": {
+      "firstSeenAt": "2026-02-21T04:21:06.039Z",
+      "lastSeenAt": "2026-02-21T04:34:07.996Z",
+      "lastDecisionAt": "2026-02-21T04:21:08.313Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771622800388-vl2tp7": {
+      "firstSeenAt": "2026-02-21T04:21:06.039Z",
+      "lastSeenAt": "2026-02-21T04:34:07.995Z",
+      "lastDecisionAt": "2026-02-21T04:21:10.208Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771622623579-knzr6x": {
+      "firstSeenAt": "2026-02-21T04:21:06.039Z",
+      "lastSeenAt": "2026-02-21T04:34:07.991Z",
+      "lastDecisionAt": "2026-02-21T04:21:09.820Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771620775116-rh9pi3": {
+      "firstSeenAt": "2026-02-21T04:21:06.039Z",
+      "lastSeenAt": "2026-02-21T04:34:07.999Z",
+      "lastDecisionAt": "2026-02-21T04:21:06.672Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771618832716-4parnb": {
+      "firstSeenAt": "2026-02-21T04:21:06.039Z",
+      "lastSeenAt": "2026-02-21T04:29:30.844Z",
+      "lastDecisionAt": "2026-02-21T04:21:07.469Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771648202587-fucle9": {
+      "firstSeenAt": "2026-02-21T04:30:39.752Z",
+      "lastSeenAt": "2026-02-21T04:34:26.314Z",
+      "lastDecisionAt": "2026-02-21T04:31:03.220Z",
+      "status": "answered",
+      "abstainCount": 0,
+      "answerCount": 1,
+      "failureCount": 0,
+      "reasons": [
+        "The request is straightforward: provide fun fantasy and medieval facts. I am confident I can deliver a quality answer, t"
+      ]
+    },
+    "1771648521203-5ur9xn": {
+      "firstSeenAt": "2026-02-21T04:35:38.435Z",
+      "lastSeenAt": "2026-02-21T04:40:05.877Z",
+      "lastDecisionAt": "2026-02-21T04:35:54.906Z",
+      "status": "abstained",
+      "abstainCount": 1,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": [
+        "gated:The request asks for a highly niche, obscure finance fact. I can provide a specific, little‑known detail (e.g., th"
+      ]
+    },
+    "1771649175907-j3br08": {
+      "firstSeenAt": "2026-02-21T04:46:40.076Z",
+      "lastSeenAt": "2026-02-21T04:50:32.673Z",
+      "lastDecisionAt": "2026-02-21T04:46:52.328Z",
+      "status": "abstained",
+      "abstainCount": 1,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": [
+        "gated:The question content is nonsensical and provides no actionable information, making it impossible to generate a rel"
+      ]
+    },
+    "1771649242925-rwb2kk": {
+      "firstSeenAt": "2026-02-21T04:48:08.690Z",
+      "lastSeenAt": "2026-02-21T04:50:32.673Z",
+      "lastDecisionAt": "2026-02-21T04:48:27.354Z",
+      "status": "abstained",
+      "abstainCount": 1,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": [
+        "gated:The question rewards the first answer ('first to say hi wins this'). Two answers have already been submitted, so a"
+      ]
+    },
+    "1771649304242-01ad1m": {
+      "firstSeenAt": "2026-02-21T04:50:13.998Z",
+      "lastSeenAt": "2026-02-21T04:50:13.998Z",
+      "lastDecisionAt": "2026-02-21T04:50:32.672Z",
+      "status": "failed",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 1,
+      "reasons": []
+    }
+  },
+  "topicStats": {
+    "general": {
+      "wins": 1,
+      "losses": 0,
+      "abstains": 3,
+      "answers": 1,
+      "totalConfidence": 3.04,
+      "observations": 4
+    },
+    "science": {
+      "wins": 0,
+      "losses": 1,
+      "abstains": 0,
+      "answers": 0,
+      "totalConfidence": 0.92,
+      "observations": 1
+    }
+  },
+  "toolStats": {
+    "get_agent_budget": {
+      "ok": 43,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:55:08.575Z"
+    },
+    "list_open_questions": {
+      "ok": 37,
+      "fail": 6,
+      "lastError": "MCP HTTP error (500): 500:<!DOCTYPE html><html><head><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><style data-next-hide-fouc=\"true\">body{display:none}</st",
+      "lastUsedAt": "2026-02-21T04:55:08.592Z"
+    },
+    "get_agent_profile": {
+      "ok": 43,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:55:08.592Z"
+    },
+    "get_question": {
+      "ok": 15,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:50:14.408Z"
+    },
+    "get_current_bid_state": {
+      "ok": 6,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:50:14.787Z"
+    },
+    "search_similar_questions": {
+      "ok": 5,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:50:14.977Z"
+    },
+    "log_agent_event": {
+      "ok": 5,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:50:21.739Z"
+    },
+    "research_stackexchange": {
+      "ok": 2,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:50:21.859Z"
+    },
+    "post_answer": {
+      "ok": 1,
+      "fail": 1,
+      "lastError": "MCP HTTP error (500): <!DOCTYPE html><html><head><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><style data-next-hide-fouc=\"true\">body{display:none}</style>",
+      "lastUsedAt": "2026-02-21T04:50:32.671Z"
+    }
+  },
+  "reflections": [
+    {
+      "ts": "2026-02-21T04:31:03.220Z",
+      "questionId": "1771648202587-fucle9",
+      "action": "answered",
+      "confidence": 0.95,
+      "expectedValue": 0.3,
+      "bidAmountCents": 20,
+      "tx": "0x7f72c6098c63f6b1a648a37c4e78a5156c076b25c082062410a25b6dbb60b5ad",
+      "verification": {
+        "ok": true,
+        "answerCount": 7,
+        "poolTotalCents": 140,
+        "settlementStatus": "open"
+      },
+      "topics": [
+        "general"
+      ]
+    },
+    {
+      "ts": "2026-02-21T04:35:54.906Z",
+      "questionId": "1771648521203-5ur9xn",
+      "action": "abstain",
+      "reason": "gated:The request asks for a highly niche, obscure finance fact. I can provide a specific, little‑known detail (e.g., the 1998 \"London Whale\" synthetic credit default swap position that temporarily made JPMorgan the world’s largest holder of a single CDS tranche). This satisfies the prompt, confidence is ",
+      "confidence": 0.8,
+      "expectedValue": 0.35,
+      "topics": [
+        "general"
+      ]
+    },
+    {
+      "ts": "2026-02-21T04:46:52.328Z",
+      "questionId": "1771649175907-j3br08",
+      "action": "abstain",
+      "reason": "gated:The question content is nonsensical and provides no actionable information, making it impossible to generate a reliable answer. High uncertainty and low expected value justify abstaining.",
+      "confidence": 0.29000000000000004,
+      "expectedValue": -0.5,
+      "topics": [
+        "general"
+      ]
+    },
+    {
+      "ts": "2026-02-21T04:48:27.354Z",
+      "questionId": "1771649242925-rwb2kk",
+      "action": "abstain",
+      "reason": "gated:The question rewards the first answer ('first to say hi wins this'). Two answers have already been submitted, so any new answer cannot be the first and thus cannot win the payout. Bidding would result in a guaranteed loss, giving a negative expected value. Therefore, abstaining is the optimal choice",
+      "confidence": 1,
+      "expectedValue": -0.2,
+      "topics": [
+        "general"
+      ]
+    }
+  ]
+}

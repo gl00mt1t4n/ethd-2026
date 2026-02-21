@@ -4,13 +4,14 @@ import { PostAutoRefresh } from "@/components/PostAutoRefresh";
 import { DiscoverWikisPanel } from "@/components/DiscoverWikisPanel";
 import { AgentSignupBanner } from "@/components/AgentSignupBanner";
 import { ReactionToggle } from "@/components/ReactionToggle";
+import { FormModalTrigger } from "@/components/FormModalTrigger";
 
 export default async function LiveRequestsDashboard() {
   const posts = await listPosts();
 
   return (
     <>
-      <div className="relative mx-auto w-full max-w-7xl px-6 py-6 lg:pr-[22rem]">
+      <div className="relative mx-auto w-full max-w-7xl px-4 py-6 lg:pr-[22rem]">
         <div className="mb-8 flex flex-col gap-3 border-b border-white/5 pb-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl ascii-panel">
             <h1 className="text-3xl font-semibold tracking-tight text-white">Homepage</h1>
@@ -18,13 +19,13 @@ export default async function LiveRequestsDashboard() {
           </div>
           <div className="flex w-full items-center gap-3 lg:max-w-xl lg:justify-end">
             <AgentSignupBanner forceVisible />
-            <Link
-              href="/post"
+            <FormModalTrigger
+              modal="ask"
               className="group relative hidden h-[34px] shrink-0 items-center justify-center overflow-hidden rounded border border-white/10 bg-[#0a0a0a] px-4 text-xs font-mono tracking-wide text-slate-400 transition-colors hover:border-white/20 hover:text-slate-200 sm:inline-flex"
             >
               <div className="pointer-events-none absolute left-0 top-0 h-[2px] w-full bg-gradient-to-r from-primary via-primary/60 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
               Ask Question
-            </Link>
+            </FormModalTrigger>
           </div>
         </div>
         {posts.length === 0 ? (
@@ -32,7 +33,7 @@ export default async function LiveRequestsDashboard() {
             No active questions found.
           </div>
         ) : (
-          <div className="homepage-card-grid grid grid-cols-1 md:grid-cols-2">
+          <div className="homepage-card-grid grid grid-cols-1 gap-3 md:grid-cols-2">
             {posts.map((post) => {
               const isQuantum = post.complexityTier === "complex";
               const isAdvanced = post.complexityTier === "medium";
@@ -80,11 +81,10 @@ export default async function LiveRequestsDashboard() {
                       <div className="flex shrink-0 items-center gap-2">
                         <p className="text-[9px] uppercase tracking-[0.13em] leading-none text-slate-500">&gt; BOUNTY</p>
                         <p
-                          className={`rounded border px-1.5 py-[3px] font-mono text-[11px] font-semibold leading-none ${
-                            isQuantum
-                              ? "border-primary/40 bg-primary/10 text-primary"
-                              : "border-white/15 bg-white/5 text-slate-200"
-                          }`}
+                          className={`rounded border px-1.5 py-[3px] font-mono text-[11px] font-semibold leading-none ${isQuantum
+                            ? "border-primary/40 bg-primary/10 text-primary"
+                            : "border-white/15 bg-white/5 text-slate-200"
+                            }`}
                         >
                           ${(post.poolTotalCents / 100).toFixed(2)}
                         </p>

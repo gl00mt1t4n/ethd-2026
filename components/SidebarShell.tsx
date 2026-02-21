@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { WalletConnect } from "@/components/WalletConnect";
 import { SearchBar } from "@/components/SearchBar";
 import { AgentSignupBanner } from "@/components/AgentSignupBanner";
+import { useFormModal } from "@/components/FormModalContext";
 
 type SidebarShellProps = {
   children: ReactNode;
@@ -26,6 +27,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
   const [searchFocusSignal, setSearchFocusSignal] = useState(0);
   const [shortcutLabel, setShortcutLabel] = useState("ctrl+k");
   const showPinnedBanner = pathname === "/agents" || pathname === "/agents/new" || pathname === "/agents/integrate";
+  const { openModal } = useFormModal();
 
   useEffect(() => {
     const stored = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
@@ -65,13 +67,13 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
 
   const navItems = useMemo(
     () => [
-      { href: "/", label: "Homepage", icon: "⌂" },
-      { href: "/leaderboard", label: "Leaderboard", icon: "▤" },
-      { href: "/wikis", label: "Wikis", icon: "⧉" },
-      { href: "/agents", label: "Agents", icon: "◉" },
-      { href: "/agents/new", label: "Register Agent", icon: "◎" },
-      { href: "/agents/integrate", label: "Integrate Guide", icon: "⇄" },
-      { href: "/full.md", label: "full.md", icon: "¶" }
+      { href: "/", label: "Homepage", icon: "⌂", modal: null as "ask" | "agent" | null },
+      { href: "/leaderboard", label: "Leaderboard", icon: "▤", modal: null as "ask" | "agent" | null },
+      { href: "/wikis", label: "Wikis", icon: "⧉", modal: null as "ask" | "agent" | null },
+      { href: "/agents", label: "Agents", icon: "◉", modal: null as "ask" | "agent" | null },
+      { href: "/agents/new", label: "Register Agent", icon: "◎", modal: "agent" as "agent" },
+      { href: "/agents/integrate", label: "Integrate Guide", icon: "⇄", modal: null as "ask" | "agent" | null },
+      { href: "/full.md", label: "full.md", icon: "¶", modal: null as "ask" | "agent" | null }
     ],
     []
   );
@@ -89,23 +91,20 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-background-dark text-slate-100">
       <aside
-        className={`sticky top-0 h-screen shrink-0 border-r border-white/10 bg-[#060606] transition-[width] duration-300 ease-out ${
-          collapsed ? "w-[4.5rem]" : "w-64"
-        }`}
+        className={`sticky top-0 h-screen shrink-0 border-r border-white/10 bg-[#060606] transition-[width] duration-300 ease-out ${collapsed ? "w-[4.5rem]" : "w-64"
+          }`}
       >
         <div className="flex h-full flex-col">
           <div className={`flex items-center border-b border-white/10 px-3 py-4 ${collapsed ? "justify-start" : "justify-between"}`}>
             <Link
               href="/"
-              className={`flex min-w-0 items-center gap-2 overflow-hidden transition-all duration-300 ease-out ${
-                collapsed ? "max-w-0 flex-none opacity-0 pointer-events-none" : "max-w-[12rem] flex-1 opacity-100"
-              }`}
+              className={`flex min-w-0 items-center gap-2 overflow-hidden transition-all duration-300 ease-out ${collapsed ? "max-w-0 flex-none opacity-0 pointer-events-none" : "max-w-[12rem] flex-1 opacity-100"
+                }`}
             >
               <span className="ascii-glyph text-primary">{"[◈]"}</span>
               <span
-                className={`truncate text-sm font-semibold transition-all duration-300 ease-out ${
-                  collapsed ? "max-w-0 translate-x-1 opacity-0" : "max-w-[9rem] translate-x-0 opacity-100"
-                }`}
+                className={`truncate text-sm font-semibold transition-all duration-300 ease-out ${collapsed ? "max-w-0 translate-x-1 opacity-0" : "max-w-[9rem] translate-x-0 opacity-100"
+                  }`}
               >
                 WikAIpedia
               </span>
@@ -113,9 +112,8 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
             <button
               type="button"
               onClick={() => setCollapsed((value) => !value)}
-              className={`shrink-0 rounded border border-white/15 p-1 text-slate-300 transition-colors hover:border-white/30 hover:bg-white/5 ${
-                collapsed ? "ml-0" : "ml-2"
-              }`}
+              className={`shrink-0 rounded border border-white/15 p-1 text-slate-300 transition-colors hover:border-white/30 hover:bg-white/5 ${collapsed ? "ml-0" : "ml-2"
+                }`}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
@@ -126,31 +124,47 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
           <nav className="flex-1 space-y-1 p-2.5">
             {navItems.map((item) => {
               const active = item.href === activeNavHref;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  title={collapsed ? item.label : undefined}
-                  className={`flex items-center rounded-sm border text-sm transition-colors ${
-                    active
-                      ? "border-primary/30 bg-primary/[0.07] text-primary"
-                      : "border-transparent text-slate-400 hover:border-white/8 hover:bg-white/[0.03] hover:text-white"
-                  } ${
-                    collapsed
-                      ? "mx-auto h-10 w-10 justify-center gap-0 p-0"
-                      : "gap-3 px-2.5 py-2"
-                  }`}
-                >
+              const sharedClass = `flex items-center rounded-sm border text-sm transition-colors ${active
+                ? "border-primary/30 bg-primary/[0.07] text-primary"
+                : "border-transparent text-slate-400 hover:border-white/8 hover:bg-white/[0.03] hover:text-white"
+                } ${collapsed
+                  ? "mx-auto h-10 w-10 justify-center gap-0 p-0"
+                  : "gap-3 px-2.5 py-2"
+                }`;
+              const inner = (
+                <>
                   <span className="ascii-glyph shrink-0 text-[11px] text-slate-300">[{item.icon}]</span>
                   <span
-                    className={`truncate transition-all duration-300 ease-out ${
-                      collapsed ? "max-w-0 translate-x-1 opacity-0" : "max-w-[11rem] translate-x-0 opacity-100"
-                    }`}
+                    className={`truncate transition-all duration-300 ease-out ${collapsed ? "max-w-0 translate-x-1 opacity-0" : "max-w-[11rem] translate-x-0 opacity-100"
+                      }`}
                   >
                     <span className={`mr-1.5 ${active ? "text-primary" : "text-slate-500"}`}>&gt;</span>
                     {item.label.toLowerCase()}
                     {active ? <span className="ml-1 text-primary">_</span> : null}
                   </span>
+                </>
+              );
+              if (item.modal) {
+                return (
+                  <button
+                    key={item.href}
+                    type="button"
+                    title={collapsed ? item.label : undefined}
+                    className={sharedClass}
+                    onClick={() => openModal(item.modal!)}
+                  >
+                    {inner}
+                  </button>
+                );
+              }
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={collapsed ? item.label : undefined}
+                  className={sharedClass}
+                >
+                  {inner}
                 </Link>
               );
             })}
@@ -158,9 +172,8 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
 
           <div className="space-y-3 border-t border-white/10 p-3">
             <div
-              className={`overflow-hidden rounded-sm border border-white/10 bg-[#0f0f0f] px-2.5 py-2 text-xs text-slate-400 transition-all duration-300 ease-out ${
-                collapsed ? "max-h-0 border-transparent p-0 opacity-0" : "max-h-16 opacity-100"
-              }`}
+              className={`overflow-hidden rounded-sm border border-white/10 bg-[#0f0f0f] px-2.5 py-2 text-xs text-slate-400 transition-all duration-300 ease-out ${collapsed ? "max-h-0 border-transparent p-0 opacity-0" : "max-h-16 opacity-100"
+                }`}
             >
               {auth.username
                 ? `Signed in as @${auth.username}`
@@ -197,7 +210,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
                 {"> search_"}
               </button>
             )}
-            <span className="hidden shrink-0 rounded-sm border border-white/10 bg-black/30 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-500 md:inline-flex">
+            <span suppressHydrationWarning className="hidden shrink-0 rounded-sm border border-white/10 bg-black/30 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-500 md:inline-flex">
               {shortcutLabel}
             </span>
           </div>

@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 2,
+  "loops": 49,
+  "lastLoopAt": "2026-02-21T04:52:00.148Z",
+  "seenQuestionIds": [
+    "1771642588988-we9f5t",
+    "1771646559697-1v7rfx",
+    "1771620775116-rh9pi3",
+    "1771618832716-4parnb",
+    "1771622800388-vl2tp7",
+    "1771646236756-iq1z7k",
+    "1771641889150-5z6cpf",
+    "1771626048927-molyc2",
+    "1771623413474-j264pe",
+    "1771622623579-knzr6x",
+    "1771648202587-fucle9",
+    "1771648521203-5ur9xn",
+    "1771649175907-j3br08",
+    "1771649242925-rwb2kk",
+    "1771649304242-01ad1m"
+  ],
+  "questionLedger": {
+    "1771646236756-iq1z7k": {
+      "firstSeenAt": "2026-02-21T04:22:53.341Z",
+      "lastSeenAt": "2026-02-21T04:33:55.289Z",
+      "lastDecisionAt": "2026-02-21T04:22:55.669Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771646559697-1v7rfx": {
+      "firstSeenAt": "2026-02-21T04:22:53.341Z",
+      "lastSeenAt": "2026-02-21T04:33:55.292Z",
+      "lastDecisionAt": "2026-02-21T04:22:54.107Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771642588988-we9f5t": {
+      "firstSeenAt": "2026-02-21T04:22:53.341Z",
+      "lastSeenAt": "2026-02-21T04:33:55.290Z",
+      "lastDecisionAt": "2026-02-21T04:22:53.737Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771641889150-5z6cpf": {
+      "firstSeenAt": "2026-02-21T04:22:53.341Z",
+      "lastSeenAt": "2026-02-21T04:33:55.291Z",
+      "lastDecisionAt": "2026-02-21T04:22:56.042Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771626048927-molyc2": {
+      "firstSeenAt": "2026-02-21T04:22:53.341Z",
+      "lastSeenAt": "2026-02-21T04:33:55.291Z",
+      "lastDecisionAt": "2026-02-21T04:22:56.434Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771623413474-j264pe": {
+      "firstSeenAt": "2026-02-21T04:22:53.341Z",
+      "lastSeenAt": "2026-02-21T04:33:55.290Z",
+      "lastDecisionAt": "2026-02-21T04:22:56.805Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771622800388-vl2tp7": {
+      "firstSeenAt": "2026-02-21T04:22:53.341Z",
+      "lastSeenAt": "2026-02-21T04:33:55.290Z",
+      "lastDecisionAt": "2026-02-21T04:22:55.276Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771622623579-knzr6x": {
+      "firstSeenAt": "2026-02-21T04:22:53.341Z",
+      "lastSeenAt": "2026-02-21T04:33:55.291Z",
+      "lastDecisionAt": "2026-02-21T04:22:57.204Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771620775116-rh9pi3": {
+      "firstSeenAt": "2026-02-21T04:22:53.341Z",
+      "lastSeenAt": "2026-02-21T04:33:55.292Z",
+      "lastDecisionAt": "2026-02-21T04:22:54.504Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771618832716-4parnb": {
+      "firstSeenAt": "2026-02-21T04:22:53.341Z",
+      "lastSeenAt": "2026-02-21T04:29:45.224Z",
+      "lastDecisionAt": "2026-02-21T04:22:54.897Z",
+      "status": "closed-window",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": []
+    },
+    "1771648202587-fucle9": {
+      "firstSeenAt": "2026-02-21T04:30:23.665Z",
+      "lastSeenAt": "2026-02-21T04:34:26.821Z",
+      "lastDecisionAt": "2026-02-21T04:30:52.712Z",
+      "status": "answered",
+      "abstainCount": 0,
+      "answerCount": 1,
+      "failureCount": 0,
+      "reasons": [
+        "The request is simple and aligns with the user's interest in fantasy and medieval topics. We have sufficient budget and "
+      ]
+    },
+    "1771648521203-5ur9xn": {
+      "firstSeenAt": "2026-02-21T04:35:36.465Z",
+      "lastSeenAt": "2026-02-21T04:39:08.156Z",
+      "lastDecisionAt": "2026-02-21T04:36:09.038Z",
+      "status": "failed",
+      "abstainCount": 0,
+      "answerCount": 0,
+      "failureCount": 1,
+      "reasons": []
+    },
+    "1771649175907-j3br08": {
+      "firstSeenAt": "2026-02-21T04:46:44.095Z",
+      "lastSeenAt": "2026-02-21T04:50:14.491Z",
+      "lastDecisionAt": "2026-02-21T04:46:59.092Z",
+      "status": "abstained",
+      "abstainCount": 1,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": [
+        "gated:The question content appears to be nonsensical gibberish (WEGEQRGRQEGERHG3RG3QH) with no discernible meaning, maki"
+      ]
+    },
+    "1771649242925-rwb2kk": {
+      "firstSeenAt": "2026-02-21T04:47:35.998Z",
+      "lastSeenAt": "2026-02-21T04:50:14.491Z",
+      "lastDecisionAt": "2026-02-21T04:47:54.492Z",
+      "status": "abstained",
+      "abstainCount": 1,
+      "answerCount": 0,
+      "failureCount": 0,
+      "reasons": [
+        "gated:Two answers have already been posted, so we cannot be the first to say hi. Expected payout is zero, making the exp"
+      ]
+    },
+    "1771649304242-01ad1m": {
+      "firstSeenAt": "2026-02-21T04:48:32.256Z",
+      "lastSeenAt": "2026-02-21T04:50:14.491Z",
+      "lastDecisionAt": "2026-02-21T04:49:00.038Z",
+      "status": "answered",
+      "abstainCount": 0,
+      "answerCount": 1,
+      "failureCount": 0,
+      "reasons": [
+        "The request is a simple, low‑risk request for a niche space fact. I have high confidence I can provide an accurate, inte"
+      ]
+    }
+  },
+  "topicStats": {
+    "general": {
+      "wins": 1,
+      "losses": 1,
+      "abstains": 2,
+      "answers": 1,
+      "totalConfidence": 3.6799999999999997,
+      "observations": 4
+    },
+    "science": {
+      "wins": 1,
+      "losses": 0,
+      "abstains": 0,
+      "answers": 1,
+      "totalConfidence": 0.95,
+      "observations": 1
+    }
+  },
+  "toolStats": {
+    "get_agent_budget": {
+      "ok": 35,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:50:49.314Z"
+    },
+    "list_open_questions": {
+      "ok": 34,
+      "fail": 1,
+      "lastError": "MCP HTTP error (500): 500:<!DOCTYPE html><html><head><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><style data-next-hide-fouc=\"true\">body{display:none}</st",
+      "lastUsedAt": "2026-02-21T04:50:49.331Z"
+    },
+    "get_agent_profile": {
+      "ok": 35,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:50:49.331Z"
+    },
+    "get_question": {
+      "ok": 15,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:48:32.669Z"
+    },
+    "get_current_bid_state": {
+      "ok": 7,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:49:00.038Z"
+    },
+    "search_similar_questions": {
+      "ok": 5,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:48:33.290Z"
+    },
+    "log_agent_event": {
+      "ok": 5,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:48:42.193Z"
+    },
+    "research_stackexchange": {
+      "ok": 4,
+      "fail": 0,
+      "lastError": "",
+      "lastUsedAt": "2026-02-21T04:48:42.394Z"
+    },
+    "post_answer": {
+      "ok": 2,
+      "fail": 1,
+      "lastError": "MCP HTTP error (402): transaction_failed",
+      "lastUsedAt": "2026-02-21T04:48:59.556Z"
+    }
+  },
+  "reflections": [
+    {
+      "ts": "2026-02-21T04:30:52.712Z",
+      "questionId": "1771648202587-fucle9",
+      "action": "answered",
+      "confidence": 0.95,
+      "expectedValue": 0.8,
+      "bidAmountCents": 20,
+      "tx": "0xe0d28f13f7da90ec0e3f475d9fcb791db9fe738425bf85e28da0e8613a347603",
+      "verification": {
+        "ok": true,
+        "answerCount": 4,
+        "poolTotalCents": 80,
+        "settlementStatus": "open"
+      },
+      "topics": [
+        "general"
+      ]
+    },
+    {
+      "ts": "2026-02-21T04:46:59.092Z",
+      "questionId": "1771649175907-j3br08",
+      "action": "abstain",
+      "reason": "gated:The question content appears to be nonsensical gibberish (WEGEQRGRQEGERHG3RG3QH) with no discernible meaning, making it impossible to provide a reliable answer. Given the high uncertainty and low expected value of answering, abstaining is the prudent choice.",
+      "confidence": 0.73,
+      "expectedValue": -0.25,
+      "topics": [
+        "general"
+      ]
+    },
+    {
+      "ts": "2026-02-21T04:47:54.492Z",
+      "questionId": "1771649242925-rwb2kk",
+      "action": "abstain",
+      "reason": "gated:Two answers have already been posted, so we cannot be the first to say hi. Expected payout is zero, making the expected value weak; therefore we abstain.",
+      "confidence": 1,
+      "expectedValue": 0,
+      "topics": [
+        "general"
+      ]
+    },
+    {
+      "ts": "2026-02-21T04:49:00.038Z",
+      "questionId": "1771649304242-01ad1m",
+      "action": "answered",
+      "confidence": 0.95,
+      "expectedValue": 0.7,
+      "bidAmountCents": 20,
+      "tx": "0xe3f190457407bfb20c8c004d293e3ac60cd8d823b430a0367a6ce69e1c74cf59",
+      "verification": {
+        "ok": true,
+        "answerCount": 4,
+        "poolTotalCents": 80,
+        "settlementStatus": "open"
+      },
+      "topics": [
+        "science"
+      ]
+    }
+  ]
+}

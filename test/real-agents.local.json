@@ -1,0 +1,116 @@
+{
+  "createdAt": "2026-02-21T04:21:04.971Z",
+  "notes": "Canonical 5 real cognitive agents.",
+  "agents": [
+    {
+      "id": "agnt_1771620677258-il2sr0x",
+      "name": "openclaw-01",
+      "ownerWalletAddress": "0x1111111111111111111111111111111111111111",
+      "ownerUsername": "local_test_owner",
+      "description": "OpenClaw agent persona=tech-builder; specialties=software-engineering, web3, product-architecture; style=precise; risk=balanced.",
+      "tags": [
+        "real-agent",
+        "cognitive"
+      ],
+      "capabilities": [
+        "tools",
+        "cognitive-loop",
+        "heartbeat",
+        "real-agent"
+      ],
+      "accessToken": "ag_926c89465e0b242a7cee9cb6707fdf425f1e78bc873fe1d3",
+      "basePrivateKey": "0x366dfaf2cadf6d47a3868c36ab046073d11a495db7e22c02bfb0d6ef260f2309",
+      "baseWalletAddress": "0xB4F427e3a4133a56A58eb94e476584C56A1e1F95",
+      "mcpServerUrl": "http://localhost:8890/mcp",
+      "personaProfile": null
+    },
+    {
+      "id": "agnt_1771620678544-3ffl3wq",
+      "name": "openclaw-02",
+      "ownerWalletAddress": "0x1111111111111111111111111111111111111111",
+      "ownerUsername": "local_test_owner",
+      "description": "OpenClaw agent persona=sports-analyst; specialties=sports, fitness, competition-strategy; style=direct; risk=aggressive.",
+      "tags": [
+        "real-agent",
+        "cognitive"
+      ],
+      "capabilities": [
+        "tools",
+        "cognitive-loop",
+        "heartbeat",
+        "real-agent"
+      ],
+      "accessToken": "ag_f8ed748efc2c70d44be14592dc306dfd70ae00d80f001905",
+      "basePrivateKey": "0x4ab1c9764e02139bb0320435d0b4ca67948e039b35f67bf8976db0eb43c6b319",
+      "baseWalletAddress": "0x2aDBBccFf316162f71426d6251B039914f389E19",
+      "mcpServerUrl": "http://localhost:8891/mcp",
+      "personaProfile": null
+    },
+    {
+      "id": "agnt_1771620679730-f6lhs8w",
+      "name": "openclaw-03",
+      "ownerWalletAddress": "0x1111111111111111111111111111111111111111",
+      "ownerUsername": "local_test_owner",
+      "description": "OpenClaw agent persona=game-master; specialties=gaming, esports, game-design; style=concise; risk=balanced.",
+      "tags": [
+        "real-agent",
+        "cognitive"
+      ],
+      "capabilities": [
+        "tools",
+        "cognitive-loop",
+        "heartbeat",
+        "real-agent"
+      ],
+      "accessToken": "ag_3883d35e861fce44a961da2cee496c0829ddefb67c19c7ec",
+      "basePrivateKey": "0x46b15297a023fb541ce5a036cf22e850d8519255493bab13a5e1f55162274939",
+      "baseWalletAddress": "0x27610Aa977bADa580A2abB8F0304bFfE2d0048e1",
+      "mcpServerUrl": "http://localhost:8892/mcp",
+      "personaProfile": null
+    },
+    {
+      "id": "agnt_1771620680898-q7rt92p",
+      "name": "openclaw-04",
+      "ownerWalletAddress": "0x1111111111111111111111111111111111111111",
+      "ownerUsername": "local_test_owner",
+      "description": "OpenClaw agent persona=bookworm-critic; specialties=books, literature, writing; style=explanatory; risk=conservative.",
+      "tags": [
+        "real-agent",
+        "cognitive"
+      ],
+      "capabilities": [
+        "tools",
+        "cognitive-loop",
+        "heartbeat",
+        "real-agent"
+      ],
+      "accessToken": "ag_b644d3a3b31c0aa0235e1e03188a7b0c1d7ddb8646f1f018",
+      "basePrivateKey": "0xac232481058b1122b5f2269229d2feb7b1f929b330b5dfaf2da524d5a0c865ba",
+      "baseWalletAddress": "0x55A268393c0043e551d9CA8Fe6bbc2457a60D021",
+      "mcpServerUrl": "http://localhost:8893/mcp",
+      "personaProfile": null
+    },
+    {
+      "id": "agnt_1771620682027-kdhzvb5",
+      "name": "openclaw-05",
+      "ownerWalletAddress": "0x1111111111111111111111111111111111111111",
+      "ownerUsername": "local_test_owner",
+      "description": "OpenClaw agent persona=market-observer; specialties=finance, economics, markets; style=high-signal; risk=conservative.",
+      "tags": [
+        "real-agent",
+        "cognitive"
+      ],
+      "capabilities": [
+        "tools",
+        "cognitive-loop",
+        "heartbeat",
+        "real-agent"
+      ],
+      "accessToken": "ag_573f3472c109f2ff5033b088d0933b3a94b24d05c5666801",
+      "basePrivateKey": "0xdcd65bbaf2912bbc444633f94dd887ac57702f25353ec700de7a2336af68d1bf",
+      "baseWalletAddress": "0x844f91Be59540AcD959e4d9895a8510d40EaCD9B",
+      "mcpServerUrl": "http://localhost:8894/mcp",
+      "personaProfile": null
+    }
+  ]
+}

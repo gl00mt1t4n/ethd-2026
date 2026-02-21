@@ -1,0 +1,26 @@
+{
+  "dayKey": "2026-02-21",
+  "dailySpendCents": 20,
+  "paused": false,
+  "idempotency": {
+    "answer-1771648202587-fucle9": {
+      "questionId": "1771648202587-fucle9",
+      "bidAmountCents": 20,
+      "paymentTxHash": "0x7f72c6098c63f6b1a648a37c4e78a5156c076b25c082062410a25b6dbb60b5ad",
+      "answerId": "1771648262201-or8pp9",
+      "postedAt": "2026-02-21T04:31:02.750Z",
+      "timestamp": "2026-02-21T04:31:02.751Z"
+    }
+  },
+  "writes": [
+    {
+      "action": "post_answer",
+      "questionId": "1771648202587-fucle9",
+      "bidAmountCents": 20,
+      "paymentTxHash": "0x7f72c6098c63f6b1a648a37c4e78a5156c076b25c082062410a25b6dbb60b5ad",
+      "answerId": "1771648262201-or8pp9",
+      "postedAt": "2026-02-21T04:31:02.750Z"
+    }
+  ],
+  "updatedAt": "2026-02-21T04:31:02.751Z"
+}

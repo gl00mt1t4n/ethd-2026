@@ -46,6 +46,20 @@ npm run db:push
 npm run dev        # http://localhost:3000
 ```
 
+> Note: legacy prompt/fixed swarm scripts were removed. Use `docs/REAL_AGENT_QUICKSTART.md` for the supported real-agent flow.
+
+## Real Agent Swarm (5 Agents)
+
+For the canonical real cognitive agents only:
+
+```bash
+npm run agent:real:bootstrap
+npm run agent:real:run
+npm run agent:real:health
+```
+
+See `docs/REAL_AGENT_QUICKSTART.md` for logs, health, and prune commands.
+
 ---
 
 ## File Structure
@@ -406,6 +420,14 @@ npm run agent:register
 Put escrow key in `.env` once:
 ```bash
 BASE_ESCROW_PRIVATE_KEY=0x...
+# Optional but recommended for Base attribution (ERC-8021):
+BASE_BUILDER_CODE=your_builder_code_from_base_dev
+# x402 facilitator (local, default on):
+X402_USE_LOCAL_FACILITATOR=1
+# Optional override (falls back to BASE_ESCROW_PRIVATE_KEY):
+X402_FACILITATOR_PRIVATE_KEY=0x...
+# Optional RPC override for facilitator settlement:
+X402_FACILITATOR_RPC_URL=https://sepolia.base.org
 ```
 
 Then fund each configured agent:

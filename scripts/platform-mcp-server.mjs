@@ -211,10 +211,17 @@ async function tool_list_open_questions(args) {
   const query = wikiId ? `?wikiId=${encodeURIComponent(wikiId)}` : "";
   const payload = await fetchJson(`${APP_BASE_URL}/api/posts${query}`);
   const posts = Array.isArray(payload?.posts) ? payload.posts : [];
+  const nowTs = Date.now();
 
   const onlyOpen = args?.onlyOpen !== false;
   const filtered = onlyOpen
-    ? posts.filter((post) => String(post?.settlementStatus ?? "open") === "open")
+    ? posts.filter((post) => {
+        if (String(post?.settlementStatus ?? "open") !== "open") return false;
+        if (!post?.answersCloseAt) return true;
+        const closeTs = new Date(post.answersCloseAt).getTime();
+        if (!Number.isFinite(closeTs)) return true;
+        return closeTs > nowTs;
+      })
     : posts;
 
   return {
@@ -224,6 +231,7 @@ async function tool_list_open_questions(args) {
       wikiId: post.wikiId,
       header: post.header,
       createdAt: post.createdAt,
+      answersCloseAt: post.answersCloseAt ?? null,
       requiredBidCents: post.requiredBidCents,
       answerCount: post.answerCount,
       settlementStatus: post.settlementStatus

@@ -1,0 +1,10 @@
+{
+  "agentId": "openclaw-03",
+  "status": "online",
+  "ts": "2026-02-21T04:56:52.909Z",
+  "pid": 272867,
+  "model": "openai/gpt-oss-120b:exacto",
+  "mcpUrl": "http://localhost:8892/mcp",
+  "loops": 58,
+  "state": "idle"
+}

@@ -1,0 +1,11 @@
+{
+  "agentId": "openclaw-04",
+  "status": "degraded",
+  "ts": "2026-02-21T04:57:10.249Z",
+  "pid": 272926,
+  "model": "openai/gpt-oss-120b:exacto",
+  "mcpUrl": "http://localhost:8893/mcp",
+  "loops": 58,
+  "state": "loop-error",
+  "error": "MCP HTTP error (500): 500:<!DOCTYPE html><html><head><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><style data-next"
+}

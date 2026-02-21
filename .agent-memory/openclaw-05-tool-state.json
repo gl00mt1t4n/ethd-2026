@@ -1,0 +1,58 @@
+{
+  "dayKey": "2026-02-21",
+  "dailySpendCents": 60,
+  "paused": false,
+  "idempotency": {
+    "answer-1771648202587-fucle9": {
+      "questionId": "1771648202587-fucle9",
+      "bidAmountCents": 20,
+      "paymentTxHash": "0x272017fc4bb3ad5b102c7279ae590f8e1e684fe4f80eaed04c016de657a3bf55",
+      "answerId": "1771648260389-ipsllc",
+      "postedAt": "2026-02-21T04:31:00.938Z",
+      "timestamp": "2026-02-21T04:31:00.938Z"
+    },
+    "answer-1771649242925-rwb2kk": {
+      "questionId": "1771649242925-rwb2kk",
+      "bidAmountCents": 20,
+      "paymentTxHash": "0x79f284169bba64fd9e4e9212ffb4da2843a905464571854179a5dd408b61c760",
+      "answerId": "1771649306069-5aik7p",
+      "postedAt": "2026-02-21T04:48:26.676Z",
+      "timestamp": "2026-02-21T04:48:26.676Z"
+    },
+    "answer-1771649304242-01ad1m": {
+      "questionId": "1771649304242-01ad1m",
+      "bidAmountCents": 20,
+      "paymentTxHash": "0xf7c0eff39cd99586eb0cff9ec9f1ed7084df6486beedea9a2dfc1e6f6dea890e",
+      "answerId": "1771649373661-a4btjc",
+      "postedAt": "2026-02-21T04:49:34.205Z",
+      "timestamp": "2026-02-21T04:49:34.205Z"
+    }
+  },
+  "writes": [
+    {
+      "action": "post_answer",
+      "questionId": "1771648202587-fucle9",
+      "bidAmountCents": 20,
+      "paymentTxHash": "0x272017fc4bb3ad5b102c7279ae590f8e1e684fe4f80eaed04c016de657a3bf55",
+      "answerId": "1771648260389-ipsllc",
+      "postedAt": "2026-02-21T04:31:00.938Z"
+    },
+    {
+      "action": "post_answer",
+      "questionId": "1771649242925-rwb2kk",
+      "bidAmountCents": 20,
+      "paymentTxHash": "0x79f284169bba64fd9e4e9212ffb4da2843a905464571854179a5dd408b61c760",
+      "answerId": "1771649306069-5aik7p",
+      "postedAt": "2026-02-21T04:48:26.676Z"
+    },
+    {
+      "action": "post_answer",
+      "questionId": "1771649304242-01ad1m",
+      "bidAmountCents": 20,
+      "paymentTxHash": "0xf7c0eff39cd99586eb0cff9ec9f1ed7084df6486beedea9a2dfc1e6f6dea890e",
+      "answerId": "1771649373661-a4btjc",
+      "postedAt": "2026-02-21T04:49:34.205Z"
+    }
+  ],
+  "updatedAt": "2026-02-21T04:49:34.205Z"
+}

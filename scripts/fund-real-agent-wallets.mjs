@@ -11,7 +11,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { loadLocalEnv } from "./load-local-env.mjs";
-import { getBuilderCode, getBuilderCodeDataSuffix } from "./builder-code.mjs";
+import { loadRealAgentsConfig } from "./real-agents-config.mjs";
 
 loadLocalEnv();
 
@@ -37,9 +37,8 @@ const USDC_ERC20_ABI = [
 
 const NETWORK = (process.env.X402_BASE_NETWORK ?? "eip155:84532").trim();
 const ESCROW_PRIVATE_KEY = (process.env.BASE_ESCROW_PRIVATE_KEY ?? "").trim();
-const ETH_PER_WALLET = process.argv[2] ? Number(process.argv[2]) : 0.005;
+const ETH_PER_WALLET = process.argv[2] ? Number(process.argv[2]) : 0.03;
 const USDC_PER_WALLET = process.argv[3] ? Number(process.argv[3]) : 2;
-const RAW_ADDRESSES = process.argv.slice(4).map((value) => String(value).trim()).filter(Boolean);
 
 function fail(message) {
   console.error(message);
@@ -58,7 +57,7 @@ function getUsdcAddress(chain) {
 }
 
 function isAddress(value) {
-  return /^0x[a-fA-F0-9]{40}$/.test(value);
+  return /^0x[a-fA-F0-9]{40}$/.test(String(value ?? ""));
 }
 
 function isNonceTooLowError(error) {
@@ -76,31 +75,24 @@ async function main() {
   if (!Number.isFinite(USDC_PER_WALLET) || USDC_PER_WALLET < 0) {
     fail("USDC amount must be >= 0.");
   }
-  if (RAW_ADDRESSES.length === 0) {
-    fail("Provide at least one wallet address.\nUsage: npm run agent:fund:wallets -- <eth> <usdc> <addr1> <addr2> ...");
-  }
 
-  const addresses = [...new Set(RAW_ADDRESSES.map((value) => value.toLowerCase()))];
+  const { agents, configPath } = await loadRealAgentsConfig();
+  const addresses = [...new Set(agents.map((agent) => String(agent?.baseWalletAddress ?? "").trim()).filter(Boolean))];
+  if (addresses.length === 0) {
+    fail(`No baseWalletAddress found in real-agent registry: ${configPath}`);
+  }
   for (const address of addresses) {
     if (!isAddress(address)) {
-      fail(`Invalid wallet address: ${address}`);
+      fail(`Invalid wallet address in real-agent registry: ${address}`);
     }
   }
 
   const chain = getChain();
-  if (chain.id !== baseSepolia.id) {
-    console.warn("Warning: current network is not Base Sepolia.");
-  }
   const usdcAddress = getUsdcAddress(chain);
   const escrow = privateKeyToAccount(ESCROW_PRIVATE_KEY);
-  const builderCode = getBuilderCode();
-  const dataSuffix = getBuilderCodeDataSuffix();
   const publicClient = createPublicClient({ chain, transport: http() });
   const walletClient = createWalletClient({ account: escrow, chain, transport: http() });
-  let nextNonce = await publicClient.getTransactionCount({
-    address: escrow.address,
-    blockTag: "pending"
-  });
+  let nextNonce = await publicClient.getTransactionCount({ address: escrow.address, blockTag: "pending" });
 
   async function sendTxWithManagedNonce(txRequest) {
     while (true) {
@@ -117,20 +109,15 @@ async function main() {
         if (!isNonceTooLowError(error)) {
           throw error;
         }
-        nextNonce = await publicClient.getTransactionCount({
-          address: escrow.address,
-          blockTag: "pending"
-        });
+        nextNonce = await publicClient.getTransactionCount({ address: escrow.address, blockTag: "pending" });
       }
     }
   }
 
   console.log(`Network: ${NETWORK}`);
   console.log(`Escrow: ${escrow.address}`);
-  console.log(`Funding ${addresses.length} wallet(s) with ${ETH_PER_WALLET} ETH and ${USDC_PER_WALLET} USDC each.`);
-  if (builderCode) {
-    console.log(`Builder code attribution enabled: ${builderCode}`);
-  }
+  console.log(`Registry wallets: ${addresses.length} from ${configPath}`);
+  console.log(`Funding each wallet with ${ETH_PER_WALLET} ETH and ${USDC_PER_WALLET} USDC.`);
 
   for (const address of addresses) {
     console.log(`\nFunding ${address}`);
@@ -144,8 +131,7 @@ async function main() {
       });
       const usdcHash = await sendTxWithManagedNonce({
         to: usdcAddress,
-        data: transferData,
-        dataSuffix
+        data: transferData
       });
       await publicClient.waitForTransactionReceipt({ hash: usdcHash });
       console.log(`  USDC tx: ${usdcHash}`);
@@ -154,9 +140,7 @@ async function main() {
     if (ETH_PER_WALLET > 0) {
       const ethHash = await sendTxWithManagedNonce({
         to: address,
-        value: parseEther(ETH_PER_WALLET.toString()),
-        data: "0x",
-        dataSuffix
+        value: parseEther(ETH_PER_WALLET.toString())
       });
       await publicClient.waitForTransactionReceipt({ hash: ethHash });
       console.log(`  ETH tx: ${ethHash}`);
@@ -171,7 +155,6 @@ async function main() {
         args: [address]
       })
     ]);
-
     console.log(`  New balances: ${formatEther(ethBalance)} ETH, ${formatUnits(usdcBalance, 6)} USDC`);
   }
 }
