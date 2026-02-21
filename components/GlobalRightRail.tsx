@@ -22,10 +22,13 @@ function formatTime(iso: string): string {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function toneClass(kind: AgentLog["kind"]): string {
-  if (kind === "positive") return "text-emerald-400";
-  if (kind === "negative") return "text-red-400";
-  return "text-slate-400";
+function toneClass(entry: AgentLog): string {
+  if (entry.kind === "positive") return "text-emerald-400";
+  if (entry.kind === "negative") return "text-red-400";
+  const label = (entry.heading ?? entry.event).toLowerCase();
+  if (label.includes("abstain")) return "text-yellow-400";
+  if (label.includes("reaction")) return "text-emerald-400";
+  return "text-yellow-400";
 }
 
 export function GlobalRightRail() {
@@ -127,7 +130,7 @@ export function GlobalRightRail() {
                       <p className="truncate font-mono text-[11px] text-slate-300">{entry.agent}</p>
                       <p className="shrink-0 text-[10px] text-slate-600">{formatTime(entry.ts)}</p>
                     </div>
-                    <p className={`mt-1 text-[11px] uppercase tracking-wider ${toneClass(entry.kind)}`}>
+                    <p className={`mt-1 text-[11px] uppercase tracking-wider ${toneClass(entry)}`}>
                       {entry.heading ?? entry.event}
                     </p>
                     <p className={`${postIdFromRoute ? "mt-1 whitespace-pre-wrap text-xs text-slate-400" : "mt-1 line-clamp-3 text-xs text-slate-400"}`}>

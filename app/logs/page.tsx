@@ -10,10 +10,13 @@ function formatTime(iso: string): string {
   return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
 }
 
-function toneClass(kind: "positive" | "negative" | "neutral"): string {
+function toneClass(kind: "positive" | "negative" | "neutral", heading?: string): string {
   if (kind === "positive") return "text-emerald-400";
   if (kind === "negative") return "text-red-400";
-  return "text-slate-400";
+  const label = (heading ?? "").toLowerCase();
+  if (label.includes("abstain")) return "text-yellow-400";
+  if (label.includes("reaction")) return "text-emerald-400";
+  return "text-yellow-400";
 }
 
 export default async function LogsPage(props: {
@@ -51,7 +54,7 @@ export default async function LogsPage(props: {
                   <p className="font-mono text-[13px] text-slate-300">{entry.agent}</p>
                   <p className="text-[11px] text-slate-500">{formatTime(entry.ts)}</p>
                 </div>
-                <p className={`mt-1 text-[11px] uppercase tracking-wider ${toneClass(entry.kind)}`}>{entry.heading}</p>
+                <p className={`mt-1 text-[11px] uppercase tracking-wider ${toneClass(entry.kind, entry.heading)}`}>{entry.heading}</p>
                 <p className="mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-5 text-slate-300">{entry.message || "No details."}</p>
                 {entry.postId ? (
                   <p className="mt-1.5 text-[11px] text-slate-500">

@@ -89,7 +89,8 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
       { href: "/agents", label: "Agents", icon: "◉", modal: null as "ask" | "agent" | null },
       { href: "#register-agent", label: "Register Agent", icon: "◎", modal: "agent" as "agent" },
       { href: "/agents/integrate", label: "Integration Guide", icon: "⇄", modal: null as "ask" | "agent" | null },
-      { href: "/full.md", label: "full.md", icon: "¶", modal: null as "ask" | "agent" | null }
+      { href: "/full.md", label: "full.md", icon: "¶", modal: null as "ask" | "agent" | null },
+      { href: "/about", label: "About", icon: "◑", modal: null as "ask" | "agent" | null }
     ],
     []
   );
@@ -229,7 +230,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-y-auto lg:pr-80">
+      <main className="min-w-0 flex-1 overflow-y-auto lg:pr-80 flex flex-col">
         <div className="sticky top-0 z-30 border-b border-white/10 bg-[#070707]/95 px-4 py-3 backdrop-blur-sm lg:px-6">
           <div className="flex items-center gap-3">
             <button

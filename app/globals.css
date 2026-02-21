@@ -18,22 +18,15 @@
 
 @layer base {
 
-  /* Custom scrollbar for a cleaner look */
+  /* Hide scrollbar globally while keeping scroll functionality */
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 0;
+    height: 0;
   }
 
-  ::-webkit-scrollbar-track {
-    background: #050505;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 3px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #555;
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 }
 

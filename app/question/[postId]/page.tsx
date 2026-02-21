@@ -31,30 +31,31 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
 
     return (
         <>
-            {/* Main Content Area */}
-            <main className="relative z-10 mx-auto flex w-full max-w-7xl origin-top scale-[0.8] flex-col lg:flex-row">
-                {/* Left Sidebar (Voting & Meta - Desktop) */}
-                <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-24 flex-col items-center gap-8 pt-12 lg:flex">
+            {/* Fills remaining height in main; only inner content scrolls */}
+            <div className="relative z-10 flex min-h-0 flex-1 flex-col lg:flex-row">
+                {/* Left Sidebar — sits outside the scroll container, never moves */}
+                <aside className="hidden w-28 flex-shrink-0 flex-col items-center gap-6 pt-10 lg:flex">
                     <div className="flex flex-col items-center gap-1 group">
                         <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-primary transition-colors">
-                            <span className="material-symbols-outlined text-[32px]">keyboard_arrow_up</span>
+                            <span className="material-symbols-outlined text-[28px]">keyboard_arrow_up</span>
                         </button>
-                        <span className="font-mono text-lg font-bold text-white">${(post.poolTotalCents / 100).toFixed(2)}</span>
-                        <span className="text-[10px] text-primary uppercase tracking-widest font-bold">Bounty</span>
+                        <span className="font-mono text-base font-bold text-white">${(post.poolTotalCents / 100).toFixed(2)}</span>
+                        <span className="text-[9px] text-primary uppercase tracking-widest font-bold">Bounty</span>
                         <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-red-500 transition-colors">
-                            <span className="material-symbols-outlined text-[32px]">keyboard_arrow_down</span>
+                            <span className="material-symbols-outlined text-[28px]">keyboard_arrow_down</span>
                         </button>
                     </div>
-                    <div className="w-px h-24 bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+                    <div className="w-px h-16 bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
                     <div className="flex flex-col gap-4">
-                        <button className="p-3 rounded-full hover:bg-white/5 text-slate-400 hover:text-primary transition-colors" title="Share">
-                            <span className="material-symbols-outlined text-[20px]">share</span>
+                        <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-primary transition-colors" title="Share">
+                            <span className="material-symbols-outlined text-[18px]">share</span>
                         </button>
                     </div>
                 </aside>
 
-                {/* Center Content (Question & Answers) */}
-                <div className="flex-1 px-6 lg:px-12 py-10 lg:py-20 max-w-3xl">
+                {/* Center Content — this is the only scrollable area */}
+                <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-10 lg:py-20">
+                <div className="max-w-4xl">
                     {/* Question Hero */}
                     <article className="mb-24 relative group">
                         {/* Mobile Vote (Visible only on small screens) */}
@@ -66,11 +67,11 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                             <span>Asked by @{post.poster} · {postedAtRelative}</span>
                         </div>
 
-                        <h2 className="text-3xl md:text-5xl lg:text-[3.5rem] font-light leading-[1.1] tracking-tight text-white mb-8">
+                        <h2 className="text-2xl md:text-4xl lg:text-[2.75rem] font-light leading-[1.1] tracking-tight text-white mb-8">
                             {post.header}
                         </h2>
 
-                        <div className="prose prose-invert prose-lg max-w-none text-slate-300 font-light leading-relaxed mb-8">
+                        <div className="prose prose-invert prose-base max-w-none text-slate-300 font-light leading-relaxed mb-8">
                             <p>{post.content}</p>
                         </div>
 
@@ -177,7 +178,8 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
 
                     <PostAutoRefresh enabled={post.settlementStatus === "open"} intervalMs={8000} />
                 </div>
-            </main>
+                </div>
+            </div>
         </>
     );
 }
