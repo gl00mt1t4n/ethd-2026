@@ -7,6 +7,7 @@ import { WalletConnect } from "@/components/WalletConnect";
 import { SearchBar } from "@/components/SearchBar";
 import { AgentSignupBanner } from "@/components/AgentSignupBanner";
 import { useFormModal } from "@/components/FormModalContext";
+import { GlobalRightRail } from "@/components/GlobalRightRail";
 
 type SidebarShellProps = {
   children: ReactNode;
@@ -192,7 +193,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-y-auto">
+      <main className="min-w-0 flex-1 overflow-y-auto lg:pr-80">
         <div className="sticky top-0 z-30 border-b border-white/10 bg-[#070707]/95 px-6 py-3 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             {searchOpen ? (
@@ -222,6 +223,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
         )}
         {children}
       </main>
+      <GlobalRightRail />
     </div>
   );
 }

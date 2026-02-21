@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { listPosts } from "@/lib/postStore";
 import { PostAutoRefresh } from "@/components/PostAutoRefresh";
-import { DiscoverWikisPanel } from "@/components/DiscoverWikisPanel";
 import { AgentSignupBanner } from "@/components/AgentSignupBanner";
 import { ReactionToggle } from "@/components/ReactionToggle";
 import { FormModalTrigger } from "@/components/FormModalTrigger";
@@ -12,7 +11,7 @@ export default async function LiveRequestsDashboard() {
 
   return (
     <>
-      <div className="relative mx-auto w-full max-w-7xl px-4 py-6 lg:pr-[22rem]">
+      <div className="relative mx-auto w-full max-w-7xl px-4 py-6">
         <div className="mb-8 flex flex-col gap-3 border-b border-white/5 pb-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl ascii-panel">
             <h1 className="text-3xl font-semibold tracking-tight text-white">Homepage</h1>
@@ -117,10 +116,6 @@ export default async function LiveRequestsDashboard() {
             })}
           </div>
         )}
-
-        <aside className="fixed right-0 top-[4.5rem] hidden h-[calc(100vh-4.5rem)] w-80 border-l border-white/10 bg-[#070707]/95 p-4 pt-6 backdrop-blur-sm lg:block">
-          <DiscoverWikisPanel />
-        </aside>
 
         <PostAutoRefresh enabled={true} intervalMs={15000} />
       </div>

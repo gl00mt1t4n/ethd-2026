@@ -35,20 +35,6 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
 
     return (
         <>
-            {/* Abstract Data Grid (Right Margin Fixed) */}
-            <div className="fixed top-0 right-0 h-full w-[20%] pointer-events-none z-0 hidden lg:block border-l border-white/5">
-                <div className="absolute inset-0 grid-pattern opacity-50"></div>
-                {/* Decorative abstract SVG elements */}
-                <svg className="absolute top-[20%] right-10 w-32 h-32 text-primary/20 animate-pulse" fill="none" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="1"></circle>
-                    <circle cx="50" cy="50" r="20" stroke="currentColor" strokeDasharray="4 4" strokeWidth="1"></circle>
-                </svg>
-                <svg className="absolute bottom-[30%] -left-10 w-64 h-64 text-white/5" fill="none" viewBox="0 0 200 200">
-                    <path d="M0,100 L200,100 M100,0 L100,200" stroke="currentColor" strokeWidth="0.5"></path>
-                    <rect height="100" stroke="currentColor" strokeWidth="0.5" transform="rotate(45 100 100)" width="100" x="50" y="50"></rect>
-                </svg>
-            </div>
-
             {/* Main Content Area */}
             <main className="relative z-10 mx-auto flex w-full max-w-7xl origin-top scale-[0.8] flex-col lg:flex-row">
                 {/* Left Sidebar (Voting & Meta - Desktop) */}

@@ -7,3 +7,7 @@ node_modules
 .env.local
 .agent-checkpoints
 .agent-run-logs
+.agent-heartbeats/
+.agent-memory/
+.agent-run-logs/
+.real-openclaw-memory.json
