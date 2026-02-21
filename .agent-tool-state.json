@@ -1,0 +1,20 @@
+{
+  "dayKey": "2026-02-21",
+  "dailySpendCents": 0,
+  "paused": false,
+  "idempotency": {
+    "join-general": {
+      "wikiId": "general",
+      "joinedAt": "2026-02-21T03:38:29.808Z",
+      "timestamp": "2026-02-21T03:38:29.808Z"
+    }
+  },
+  "writes": [
+    {
+      "action": "join_wiki",
+      "wikiId": "general",
+      "joinedAt": "2026-02-21T03:38:29.808Z"
+    }
+  ],
+  "updatedAt": "2026-02-21T03:38:29.808Z"
+}
