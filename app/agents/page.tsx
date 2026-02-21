@@ -3,6 +3,7 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { AgentOpsPanel } from "@/components/AgentOpsPanel";
 import { getAuthState } from "@/lib/session";
+import { deriveRuntimeStatus, listAgentHeartbeats } from "@/lib/agentRuntimeHealth";
 import { listAgents, listAgentsByOwner } from "@/lib/agentStore";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,9 @@ function slugify(input: string): string {
 function isRelevantListenerLine(line: string): boolean {
   return (
     line.includes("[decision:model]") ||
+    line.includes("cognitive_decision") ||
+    line.includes("answer-posted") ||
+    line.includes("abstain") ||
     line.includes("[event]") ||
     line.includes("[reaction]") ||
     line.includes("[submit]")
@@ -25,21 +29,25 @@ function isRelevantListenerLine(line: string): boolean {
 
 async function readRecentListenerLines(agentName: string, limit = 10): Promise<string[]> {
   const key = slugify(agentName);
-  const filePath = path.join(AGENT_RUN_LOG_DIR, `${key}-listener.log`);
+  const candidateFiles = [
+    path.join(AGENT_RUN_LOG_DIR, `${key}-cognitive.log`),
+    path.join(AGENT_RUN_LOG_DIR, `${key}-listener.log`)
+  ];
 
-  try {
-    const raw = await readFile(filePath, "utf8");
-    const relevant = raw
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .filter(isRelevantListenerLine);
-    return relevant.slice(-limit).map((line) =>
-      line.startsWith("[") && line.includes(":listener]") ? line : `[${key}:listener] ${line}`
-    );
-  } catch {
-    return [];
+  for (const filePath of candidateFiles) {
+    try {
+      const raw = await readFile(filePath, "utf8");
+      const relevant = raw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .filter(isRelevantListenerLine);
+      if (relevant.length) {
+        return relevant.slice(-limit).map((line) => (line.startsWith("[") ? line : `[${key}] ${line}`));
+      }
+    } catch {}
   }
+  return [];
 }
 
 export default async function AgentsPage() {
@@ -48,6 +56,7 @@ export default async function AgentsPage() {
     listAgents(),
     auth.walletAddress ? listAgentsByOwner(auth.walletAddress) : Promise.resolve([])
   ]);
+  const heartbeats = await listAgentHeartbeats();
   const allAgents = [...myAgents, ...publicAgents];
   const logsEntries = await Promise.all(
     allAgents.map(async (agent) => [agent.id, await readRecentListenerLines(agent.name, 12)] as const)
@@ -84,6 +93,25 @@ export default async function AgentsPage() {
                         <Link href={`/agents/${agent.id}`} className="font-medium text-white hover:text-primary">
                           {agent.name}
                         </Link>
+                        {(() => {
+                          const hb =
+                            heartbeats.get(agent.name) ??
+                            heartbeats.get(agent.id) ??
+                            heartbeats.get(String(agent.baseWalletAddress ?? "").toLowerCase()) ??
+                            null;
+                          const runtimeStatus = deriveRuntimeStatus(hb);
+                          const statusClass =
+                            runtimeStatus === "online"
+                              ? "text-emerald-400"
+                              : runtimeStatus === "degraded"
+                                ? "text-amber-400"
+                                : "text-slate-500";
+                          return (
+                            <p className={`mt-1 text-xs uppercase tracking-wider ${statusClass}`}>
+                              Runtime: {runtimeStatus}
+                            </p>
+                          );
+                        })()}
                         <p className="mt-1 text-xs text-slate-500">{agent.mcpServerUrl}</p>
                         <div className="mt-2 rounded border border-white/10 bg-black/20 p-2">
                           <p className="text-[10px] uppercase tracking-wider text-slate-500">Listener logs</p>
@@ -120,6 +148,25 @@ export default async function AgentsPage() {
                       <Link href={`/agents/${agent.id}`} className="font-medium text-white hover:text-primary">
                         {agent.name}
                       </Link>
+                      {(() => {
+                        const hb =
+                          heartbeats.get(agent.name) ??
+                          heartbeats.get(agent.id) ??
+                          heartbeats.get(String(agent.baseWalletAddress ?? "").toLowerCase()) ??
+                          null;
+                        const runtimeStatus = deriveRuntimeStatus(hb);
+                        const statusClass =
+                          runtimeStatus === "online"
+                            ? "text-emerald-400"
+                            : runtimeStatus === "degraded"
+                              ? "text-amber-400"
+                              : "text-slate-500";
+                        return (
+                          <p className={`mt-1 text-xs uppercase tracking-wider ${statusClass}`}>
+                            Runtime: {runtimeStatus}
+                          </p>
+                        );
+                      })()}
                       <p className="line-clamp-2 text-sm text-slate-400">{agent.description}</p>
                       <p className="mt-1 text-xs text-slate-500">Owner: @{agent.ownerUsername}</p>
                       <div className="mt-2 rounded border border-white/10 bg-black/20 p-2">

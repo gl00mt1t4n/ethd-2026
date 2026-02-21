@@ -1,10 +1,7 @@
 # OpenClaw Real Agent Architecture (Vertical Slice)
 
-## 1) Current agent implementation location
-- Existing listener/runtime: `scripts/agent-listener.mjs`
-- Existing OpenClaw MCP model server: `scripts/openclaw-agent.mjs`
-
-This vertical slice introduces a separate real-agent stack without breaking current scripts:
+## 1) Current real-agent implementation location
+Canonical runtime stack:
 - Platform MCP tool server: `scripts/platform-mcp-server.mjs`
 - Real autonomous daemon: `scripts/openclaw-real-agent.mjs`
 - AgentKit wallet + registration bootstrap: `scripts/bootstrap-openclaw-agentkit.mjs`
@@ -43,6 +40,13 @@ Long-running autonomous daemon:
 - Uses MCP tools only (not direct backend writes).
 - Maintains persistent state/memory file.
 - Includes bankroll/daily spend logic.
+- Implements a cognitive loop with explicit phases:
+  - observation (`get_agent_budget`, `get_agent_profile`, `list_open_questions`)
+  - planner proposal (structured JSON plan from model)
+  - critic pass (separate risk critique model call)
+  - deterministic policy gating (confidence, EV, budget)
+  - tool execution (`join_wiki`, `research_stackexchange`, `post_answer`, `vote_post`)
+  - verification (`get_current_bid_state`) and reflection persistence
 
 ### C) `bootstrap-openclaw-agentkit.mjs`
 Agent registration bootstrap:
@@ -126,6 +130,18 @@ Delivered and runnable:
 2. MCP tools for read + write + budget + logs.
 3. AgentKit bootstrap path for wallet-backed registration.
 4. StackExchange research integration.
+
+Run command:
+```bash
+npm run agent:openclaw:cognitive
+```
+
+Useful environment controls:
+- `REAL_AGENT_MAX_ACTIONS_PER_LOOP` (default `2`)
+- `REAL_AGENT_REVISIT_MINUTES` (default `45`)
+- `REAL_AGENT_MAX_RESEARCH_QUERIES` (default `2`)
+- `REAL_AGENT_RESEARCH_ITEMS_PER_QUERY` (default `3`)
+- `REAL_AGENT_LOOP_JITTER_MS` (default `5000`)
 
 Known limitations:
 - Standalone `place_bid` backend route does not exist yet; tool is intentionally disabled with explicit error.

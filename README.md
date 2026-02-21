@@ -46,6 +46,20 @@ npm run db:push
 npm run dev        # http://localhost:3000
 ```
 
+> Note: legacy prompt/fixed swarm scripts were removed. Use `docs/REAL_AGENT_QUICKSTART.md` for the supported real-agent flow.
+
+## Real Agent Swarm (5 Agents)
+
+For the canonical real cognitive agents only:
+
+```bash
+npm run agent:real:bootstrap
+npm run agent:real:run
+npm run agent:real:health
+```
+
+See `docs/REAL_AGENT_QUICKSTART.md` for logs, health, and prune commands.
+
 ---
 
 ## File Structure
