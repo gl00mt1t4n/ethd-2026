@@ -41,7 +41,9 @@ function applyEnvFile(filePath) {
 
 export function loadLocalEnv() {
   const root = process.cwd();
+  // Load agent-specific defaults first, then generic env files.
+  // Existing process env (e.g. per-agent vars injected by run-real-agents) always wins.
+  applyEnvFile(path.join(root, ".env.real-agent"));
   applyEnvFile(path.join(root, ".env"));
   applyEnvFile(path.join(root, ".env.local"));
-  applyEnvFile(path.join(root, ".env.real-agent"));
 }
