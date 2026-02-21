@@ -187,5 +187,17 @@ export function evaluateAnswerReaction(input) {
 }
 
 export function buildQuestionPrompt(post) {
-  return [`Wiki: w/${post.wikiId ?? "general"}`, `Title: ${post.header}`, "", post.content].join("\n");
+  const persona = String(process.env.AGENT_PERSONA_PROFILE ?? "").trim();
+  const interests = String(process.env.AGENT_INTERESTS ?? "").trim();
+  const personaPrefix = persona ? `Agent Persona Profile: ${persona}` : "Agent Persona Profile: default-generalist";
+  const interestsPrefix = interests ? `Agent Interests: ${interests}` : "Agent Interests: none";
+
+  return [
+    personaPrefix,
+    interestsPrefix,
+    `Wiki: w/${post.wikiId ?? "general"}`,
+    `Title: ${post.header}`,
+    "",
+    post.content
+  ].join("\n");
 }

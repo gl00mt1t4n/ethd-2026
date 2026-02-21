@@ -168,6 +168,8 @@ function normalizeDecision(raw, answers) {
 async function evaluatePostDecision(input) {
   const prompt = [
     `Timestamp: ${new Date().toISOString()}`,
+    `Agent Profile JSON: ${JSON.stringify(input?.agentProfile ?? {})}`,
+    `Agent Interests: ${String(input?.agentInterests ?? "") || "none"}`,
     `Post JSON: ${JSON.stringify(input?.post ?? {})}`,
     `Existing Answers JSON: ${JSON.stringify(input?.existingAnswers ?? [])}`,
     "Decide carefully using epistemic humility. Abstain when uncertain."
@@ -213,6 +215,8 @@ function normalizeWikiDecision(raw, input) {
 async function evaluateWikiMembershipDecision(input) {
   const prompt = [
     `Timestamp: ${new Date().toISOString()}`,
+    `Agent Profile JSON: ${JSON.stringify(input?.agentProfile ?? {})}`,
+    `Agent Interests: ${String(input?.agentInterests ?? "") || "none"}`,
     `Joined Wiki IDs JSON: ${JSON.stringify(input?.joinedWikiIds ?? [])}`,
     `Discovery Candidates JSON: ${JSON.stringify(input?.candidates ?? [])}`,
     "Decide one-step membership actions. It's okay to abstain."
@@ -282,7 +286,9 @@ const server = http.createServer(async (req, res) => {
                     existingAnswers: {
                       type: "array",
                       items: { type: "object" }
-                    }
+                    },
+                    agentProfile: { type: "object" },
+                    agentInterests: { type: "string" }
                   },
                   required: ["post", "existingAnswers"]
                 }
@@ -301,7 +307,9 @@ const server = http.createServer(async (req, res) => {
                     candidates: {
                       type: "array",
                       items: { type: "object" }
-                    }
+                    },
+                    agentProfile: { type: "object" },
+                    agentInterests: { type: "string" }
                   },
                   required: ["joinedWikiIds", "candidates"]
                 }
@@ -318,6 +326,11 @@ const server = http.createServer(async (req, res) => {
         const existingAnswers = Array.isArray(body?.params?.arguments?.existingAnswers)
           ? body.params.arguments.existingAnswers
           : [];
+        const agentProfile =
+          body?.params?.arguments?.agentProfile && typeof body.params.arguments.agentProfile === "object"
+            ? body.params.arguments.agentProfile
+            : null;
+        const agentInterests = String(body?.params?.arguments?.agentInterests ?? "").trim();
         const joinedWikiIds = Array.isArray(body?.params?.arguments?.joinedWikiIds)
           ? body.params.arguments.joinedWikiIds
           : [];
@@ -355,7 +368,9 @@ const server = http.createServer(async (req, res) => {
 
           const decision = await evaluatePostDecision({
             post,
-            existingAnswers
+            existingAnswers,
+            agentProfile,
+            agentInterests
           });
           return json(res, 200, {
             jsonrpc: "2.0",
@@ -369,7 +384,9 @@ const server = http.createServer(async (req, res) => {
         if (toolName === "evaluate_wiki_membership") {
           const decision = await evaluateWikiMembershipDecision({
             joinedWikiIds,
-            candidates
+            candidates,
+            agentProfile,
+            agentInterests
           });
           return json(res, 200, {
             jsonrpc: "2.0",

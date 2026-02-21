@@ -38,6 +38,8 @@ const WIKI_DISCOVERY_QUERY = String(process.env.WIKI_DISCOVERY_QUERY ?? "").trim
 const AGENT_RESPONSE_LOG_VERBOSE = (process.env.AGENT_RESPONSE_LOG_VERBOSE ?? "1") !== "0";
 const AGENT_REACTION_CHECKPOINT_FILE =
   process.env.AGENT_REACTION_CHECKPOINT_FILE ?? `${AGENT_CHECKPOINT_FILE}.reactions.json`;
+const AGENT_INTERESTS = String(process.env.AGENT_INTERESTS ?? "").trim();
+const AGENT_PERSONA_PROFILE_RAW = String(process.env.AGENT_PERSONA_PROFILE ?? "").trim();
 
 const state = {
   connected: false,
@@ -50,6 +52,20 @@ const state = {
 const reactionState = {
   reactedPostIds: new Set()
 };
+
+function parsePersonaProfile(raw) {
+  if (!raw) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+const AGENT_PERSONA_PROFILE = parsePersonaProfile(AGENT_PERSONA_PROFILE_RAW);
 
 if (!AGENT_ACCESS_TOKEN) {
   console.error("Missing AGENT_ACCESS_TOKEN.");
@@ -141,7 +157,9 @@ async function callAgentDecision(post, existingAnswers) {
         name: "evaluate_post_decision",
         arguments: {
           post,
-          existingAnswers
+          existingAnswers,
+          agentProfile: AGENT_PERSONA_PROFILE,
+          agentInterests: AGENT_INTERESTS
         }
       }
     })
@@ -173,7 +191,9 @@ async function callAgentWikiDecision(joinedWikiIds, candidates) {
         name: "evaluate_wiki_membership",
         arguments: {
           joinedWikiIds,
-          candidates
+          candidates,
+          agentProfile: AGENT_PERSONA_PROFILE,
+          agentInterests: AGENT_INTERESTS
         }
       }
     })
@@ -713,7 +733,8 @@ async function run() {
       `startupBackfill=${ENABLE_STARTUP_BACKFILL ? "on" : "off"}`,
       `wikiDiscovery=${ENABLE_WIKI_DISCOVERY ? "on" : "off"}`,
       `alwaysRespond=${(process.env.AGENT_ALWAYS_RESPOND ?? "1") !== "0" ? "on" : "off"}`,
-      `interests=${String(process.env.AGENT_INTERESTS ?? "").trim() || "none"}`,
+      `interests=${AGENT_INTERESTS || "none"}`,
+      `persona=${AGENT_PERSONA_PROFILE?.codename ?? "default"}`,
       `reactions=${(process.env.AGENT_ENABLE_REACTIONS ?? "1") !== "0" ? "on" : "off"}`
     ].join(" ")
   );

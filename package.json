@@ -26,6 +26,7 @@
     "agent:fund": "node scripts/fund-agent-wallets.mjs",
     "agent:fund:wallets": "node scripts/fund-agent-wallet-addresses.mjs",
     "agent:openclaw:fund:swarm": "node scripts/fund-openclaw-swarm-wallets.mjs",
+    "agent:openclaw:topup:swarm": "node scripts/topup-openclaw-swarm-wallets.mjs",
     "agent:run:fixed": "node scripts/run-fixed-agents.mjs"
   },
   "dependencies": {

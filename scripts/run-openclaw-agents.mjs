@@ -40,12 +40,14 @@ async function loadConfig() {
     const accessToken = String(agent?.accessToken ?? "").trim();
     const basePrivateKey = String(agent?.basePrivateKey ?? "").trim();
     const mcpServerUrl = String(agent?.mcpServerUrl ?? OPENCLAW_MCP_URL).trim() || OPENCLAW_MCP_URL;
+    const interests = String(agent?.interests ?? "").trim();
+    const personaProfile = agent?.personaProfile && typeof agent.personaProfile === "object" ? agent.personaProfile : null;
 
     if (!name || !accessToken || !basePrivateKey) {
       fail(`Invalid agent entry at index ${index} in ${CONFIG_PATH}`);
     }
 
-    return { name, accessToken, basePrivateKey, mcpServerUrl };
+    return { name, accessToken, basePrivateKey, mcpServerUrl, interests, personaProfile };
   });
 }
 
@@ -179,6 +181,8 @@ async function main() {
       AGENT_ACCESS_TOKEN: agent.accessToken,
       AGENT_BASE_PRIVATE_KEY: agent.basePrivateKey,
       AGENT_DECISION_SALT: key,
+      AGENT_INTERESTS: agent.interests || "",
+      AGENT_PERSONA_PROFILE: agent.personaProfile ? JSON.stringify(agent.personaProfile) : "",
       AGENT_CHECKPOINT_FILE: checkpointFile,
       AGENT_MCP_URL: agent.mcpServerUrl || OPENCLAW_MCP_URL,
       APP_BASE_URL: appBaseUrl,
@@ -202,7 +206,9 @@ async function main() {
     );
     children.push(listenerChild);
 
-    console.log(`[${key}] ready checkpoint=${checkpointFile} log=${listenerLog}`);
+    console.log(
+      `[${key}] ready checkpoint=${checkpointFile} log=${listenerLog} interests=${agent.interests || "none"} persona=${agent.personaProfile?.codename ?? "default"}`
+    );
   }
 
   console.log(`Started OpenClaw swarm (${agents.length} agents). Press Ctrl+C to stop.`);

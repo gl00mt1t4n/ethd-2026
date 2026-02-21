@@ -22,12 +22,70 @@ const DEFAULT_WIKI_DESCRIPTION = "General wiki for broad questions.";
 const CONFIG_PATH = path.resolve(
   String(process.env.OPENCLAW_SWARM_CONFIG ?? "test/openclaw-agents.local.json").trim()
 );
-const AGENT_COUNT = Number(process.env.OPENCLAW_SWARM_COUNT ?? process.argv[2] ?? 15);
+const AGENT_COUNT = Number(process.env.OPENCLAW_SWARM_COUNT ?? process.argv[2] ?? 8);
 const MCP_URL = String(process.env.OPENCLAW_SWARM_MCP_URL ?? "http://localhost:8790/mcp").trim();
 const OWNER_WALLET_ADDRESS = String(process.env.OPENCLAW_SWARM_OWNER_WALLET ?? DEFAULT_OWNER_WALLET)
   .trim()
   .toLowerCase();
 const OWNER_USERNAME = String(process.env.OPENCLAW_SWARM_OWNER_USERNAME ?? DEFAULT_OWNER_USERNAME).trim();
+const PERSONA_CATALOG = [
+  {
+    codename: "tech-builder",
+    specialties: ["software-engineering", "web3", "product-architecture"],
+    temperament: "analytical",
+    riskStyle: "balanced",
+    interactionStyle: "precise"
+  },
+  {
+    codename: "sports-analyst",
+    specialties: ["sports", "fitness", "competition-strategy"],
+    temperament: "energetic",
+    riskStyle: "aggressive",
+    interactionStyle: "direct"
+  },
+  {
+    codename: "game-master",
+    specialties: ["gaming", "esports", "game-design"],
+    temperament: "playful",
+    riskStyle: "balanced",
+    interactionStyle: "concise"
+  },
+  {
+    codename: "bookworm-critic",
+    specialties: ["books", "literature", "writing"],
+    temperament: "reflective",
+    riskStyle: "conservative",
+    interactionStyle: "explanatory"
+  },
+  {
+    codename: "market-observer",
+    specialties: ["finance", "economics", "markets"],
+    temperament: "skeptical",
+    riskStyle: "conservative",
+    interactionStyle: "high-signal"
+  },
+  {
+    codename: "science-guide",
+    specialties: ["science", "space", "health"],
+    temperament: "curious",
+    riskStyle: "balanced",
+    interactionStyle: "structured"
+  },
+  {
+    codename: "culture-curator",
+    specialties: ["movies", "music", "pop-culture"],
+    temperament: "social",
+    riskStyle: "balanced",
+    interactionStyle: "insightful"
+  },
+  {
+    codename: "life-coach",
+    specialties: ["career", "habits", "self-improvement"],
+    temperament: "supportive",
+    riskStyle: "balanced",
+    interactionStyle: "empathetic"
+  }
+];
 
 function fail(message) {
   console.error(message);
@@ -104,7 +162,9 @@ function normalizeExistingMap(agents) {
       basePrivateKey: String(agent?.basePrivateKey ?? "").trim(),
       baseWalletAddress: String(agent?.baseWalletAddress ?? "").trim(),
       description: String(agent?.description ?? "").trim(),
-      mcpServerUrl: String(agent?.mcpServerUrl ?? "").trim()
+      mcpServerUrl: String(agent?.mcpServerUrl ?? "").trim(),
+      interests: String(agent?.interests ?? "").trim(),
+      personaProfile: agent?.personaProfile && typeof agent.personaProfile === "object" ? agent.personaProfile : null
     });
   }
   return map;
@@ -176,9 +236,16 @@ function buildAgentName(index) {
   return `openclaw-${String(index + 1).padStart(2, "0")}`;
 }
 
-function buildAgentDescription(index) {
-  const ordinal = index + 1;
-  return `OpenClaw swarm agent ${ordinal}. Default mode: responds to every eligible post in w/general with full decision logs.`;
+function buildAgentDescription(persona) {
+  return `OpenClaw agent persona=${persona.codename}; specialties=${persona.specialties.join(", ")}; style=${persona.interactionStyle}; risk=${persona.riskStyle}.`;
+}
+
+function buildPersona(index) {
+  const template = PERSONA_CATALOG[index % PERSONA_CATALOG.length];
+  return {
+    ...template,
+    personaId: `${template.codename}-${String(index + 1).padStart(2, "0")}`
+  };
 }
 
 async function main() {
@@ -204,8 +271,9 @@ async function main() {
 
   for (let i = 0; i < AGENT_COUNT; i += 1) {
     const name = buildAgentName(i);
-    const description = buildAgentDescription(i);
     const previous = existingByName.get(name.toLowerCase());
+    const persona = previous?.personaProfile ?? buildPersona(i);
+    const description = buildAgentDescription(persona);
 
     const basePrivateKey = previous?.basePrivateKey || generatePrivateKey();
     const baseWalletAddress = privateKeyToAccount(basePrivateKey).address;
@@ -226,6 +294,8 @@ async function main() {
     outputAgents.push({
       name,
       description,
+      interests: previous?.interests || persona.specialties.join(","),
+      personaProfile: persona,
       accessToken,
       basePrivateKey,
       baseWalletAddress,
