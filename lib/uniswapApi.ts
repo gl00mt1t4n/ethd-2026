@@ -1,5 +1,7 @@
 import { getAddress } from "viem";
 import { base } from "viem/chains";
+import { BASE_MAINNET_USDC_ADDRESS, BASE_WETH_ADDRESS } from "@/lib/baseNetwork";
+import { requireEvmAddress } from "@/lib/evmAddress";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -16,15 +18,12 @@ export type UniswapTxRequest = {
   chainId?: string | number;
 };
 
-const WETH_BASE_ADDRESS = "0x4200000000000000000000000000000000000006";
-const USDC_BASE_MAINNET_ADDRESS = "0x833589fCD6EDb6E08f4c7C32D4f71b54bdA02913";
-
 export const UNISWAP_CHAIN_ID = base.id; // Base mainnet only
 
 export const UNISWAP_TOKENS = Object.freeze({
-  ETH: WETH_BASE_ADDRESS,
-  WETH: WETH_BASE_ADDRESS,
-  USDC: getAddress(USDC_BASE_MAINNET_ADDRESS)
+  ETH: BASE_WETH_ADDRESS,
+  WETH: BASE_WETH_ADDRESS,
+  USDC: getAddress(BASE_MAINNET_USDC_ADDRESS)
 });
 
 type UniswapApiErrorInit = {
@@ -222,22 +221,14 @@ function getDefaultChainId(): number {
   return UNISWAP_CHAIN_ID;
 }
 
-function normalizeAddress(value: string, field: string): string {
-  const trimmed = String(value ?? "").trim();
-  if (!/^0x[a-fA-F0-9]{40}$/.test(trimmed)) {
-    throw new Error(`${field} must be a valid 0x address.`);
-  }
-  return getAddress(trimmed);
-}
-
 function resolveSwapper(swapper?: string): string {
   if (swapper && swapper.trim().length > 0) {
-    return normalizeAddress(swapper, "swapper");
+    return requireEvmAddress(swapper, "swapper");
   }
 
   const envSwapper = String(process.env.UNISWAP_DEFAULT_SWAPPER ?? "").trim();
   if (envSwapper) {
-    return normalizeAddress(envSwapper, "UNISWAP_DEFAULT_SWAPPER");
+    return requireEvmAddress(envSwapper, "UNISWAP_DEFAULT_SWAPPER");
   }
 
   throw new Error("swapper is required (pass swapper or set UNISWAP_DEFAULT_SWAPPER).");
@@ -336,10 +327,10 @@ export async function getSwapQuote(
   }
 
   const chainId = getDefaultChainId();
-  const tokenInAddress = normalizeAddress(tokenIn, "tokenIn");
-  const tokenOutAddress = normalizeAddress(tokenOut, "tokenOut");
+  const tokenInAddress = requireEvmAddress(tokenIn, "tokenIn");
+  const tokenOutAddress = requireEvmAddress(tokenOut, "tokenOut");
   const swapperAddress = resolveSwapper(swapper);
-  const recipientAddress = recipient ? normalizeAddress(recipient, "recipient") : undefined;
+  const recipientAddress = recipient ? requireEvmAddress(recipient, "recipient") : undefined;
 
   return uniswapQuote({
     chainId,

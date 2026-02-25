@@ -7,6 +7,49 @@ import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type RuntimeLogBody = {
+  type?: string;
+  payload?: unknown;
+  actionId?: string;
+  postId?: string;
+};
+
+function toPayloadObject(payload: unknown): Record<string, unknown> {
+  return payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+}
+
+function extractPostId(bodyPostId: unknown, payloadObj: Record<string, unknown>): string {
+  const nestedQuestionId =
+    payloadObj.gated && typeof payloadObj.gated === "object"
+      ? (payloadObj.gated as Record<string, unknown>).questionId
+      : "";
+  return String(bodyPostId ?? payloadObj.questionId ?? payloadObj.postId ?? nestedQuestionId ?? "").trim();
+}
+
+function inferRuntimeLogLevel(eventType: string): "info" | "success" | "failure" {
+  const loweredType = eventType.toLowerCase();
+  if (loweredType.includes("fail") || loweredType.includes("error")) {
+    return "failure";
+  }
+  if (loweredType.includes("success") || loweredType.includes("answered")) {
+    return "success";
+  }
+  return "info";
+}
+
+function extractRuntimeLogMessage(payloadObj: Record<string, unknown>): string | null {
+  if (typeof payloadObj.reason === "string") {
+    return payloadObj.reason;
+  }
+  if (typeof payloadObj.message === "string") {
+    return payloadObj.message;
+  }
+  if (typeof payloadObj.error === "string") {
+    return payloadObj.error;
+  }
+  return null;
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const limit = Number(url.searchParams.get("limit") ?? 60);
@@ -23,41 +66,17 @@ export async function POST(request: Request) {
   }
   const { agent } = auth;
 
-  const body = (await request.json().catch(() => null)) as
-    | { type?: string; payload?: unknown; actionId?: string; postId?: string }
-    | null;
+  const body = (await request.json().catch(() => null)) as RuntimeLogBody | null;
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
   const type = String(body.type ?? "event").trim() || "event";
-  const payload = body.payload ?? {};
   const actionId = String(body.actionId ?? "").trim() || generateAgentActionId();
-  const payloadObj =
-    payload && typeof payload === "object" ? (payload as Record<string, unknown>) : ({} as Record<string, unknown>);
-  const postId = String(
-    body.postId ??
-      payloadObj.questionId ??
-      payloadObj.postId ??
-      (payloadObj.gated && typeof payloadObj.gated === "object"
-        ? (payloadObj.gated as Record<string, unknown>).questionId
-        : "") ??
-      ""
-  ).trim();
-
-  const loweredType = type.toLowerCase();
-  const inferredOutcome: "info" | "success" | "failure" = loweredType.includes("fail") || loweredType.includes("error")
-    ? "failure"
-    : loweredType.includes("success") || loweredType.includes("answered")
-      ? "success"
-      : "info";
-
-  const errorMessage = typeof payloadObj.error === "string" ? payloadObj.error : null;
-  const message = typeof payloadObj.reason === "string"
-    ? payloadObj.reason
-    : typeof payloadObj.message === "string"
-      ? payloadObj.message
-      : errorMessage;
+  const payloadObj = toPayloadObject(body.payload);
+  const postId = extractPostId(body.postId, payloadObj);
+  const inferredOutcome = inferRuntimeLogLevel(type);
+  const message = extractRuntimeLogMessage(payloadObj);
 
   await appendAgentRuntimeLog({
     actionId,

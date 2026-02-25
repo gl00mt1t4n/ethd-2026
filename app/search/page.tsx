@@ -2,6 +2,16 @@ import Link from "next/link";
 import { searchPosts } from "@/lib/postStore";
 import { searchWikis } from "@/lib/wikiStore";
 
+const PANEL_CLASS = "ascii-panel rounded-lg border border-white/10 bg-[#0a0a0a] p-4";
+const RESULT_CARD_CLASS = "block rounded-md border border-white/10 bg-[#121212] px-3 py-2 transition-colors hover:border-white/20";
+
+function buildSearchUrl(input: { query: string; onlyWikis: boolean; wikisOpen: boolean }): string {
+  const params = new URLSearchParams({ q: input.query });
+  params.set("onlyWikis", input.onlyWikis ? "1" : "0");
+  params.set("wikisOpen", input.wikisOpen ? "1" : "0");
+  return `/search?${params.toString()}`;
+}
+
 export default async function SearchPage(props: {
   searchParams: Promise<{ q?: string; onlyWikis?: string; wikisOpen?: string }>;
 }) {
@@ -14,9 +24,16 @@ export default async function SearchPage(props: {
     ? await Promise.all([searchPosts(q, 40), searchWikis(q, 12)])
     : [[], []];
 
-  const baseQuery = `q=${encodeURIComponent(q)}`;
-  const onlyWikisHref = `/search?${baseQuery}&onlyWikis=${onlyWikis ? "0" : "1"}${wikisOpen ? "&wikisOpen=1" : ""}`;
-  const toggleWikisHref = `/search?${baseQuery}${onlyWikis ? "&onlyWikis=1" : ""}&wikisOpen=${wikisOpen ? "0" : "1"}`;
+  const onlyWikisHref = buildSearchUrl({
+    query: q,
+    onlyWikis: !onlyWikis,
+    wikisOpen
+  });
+  const toggleWikisHref = buildSearchUrl({
+    query: q,
+    onlyWikis,
+    wikisOpen: !wikisOpen
+  });
 
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-8">
@@ -33,7 +50,7 @@ export default async function SearchPage(props: {
         </div>
       ) : (
         <div className="space-y-5">
-          <section className="ascii-panel rounded-lg border border-white/10 bg-[#0a0a0a] p-4">
+          <section className={PANEL_CLASS}>
             <div className="mb-2 flex items-center justify-between gap-3">
               <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">
                 Subwiki matches ({wikis.length})
@@ -67,7 +84,7 @@ export default async function SearchPage(props: {
                   <li key={wiki.id}>
                     <Link
                       href={`/wiki/${wiki.id}`}
-                      className="block rounded-md border border-white/10 bg-[#121212] px-3 py-2 transition-colors hover:border-white/20"
+                      className={RESULT_CARD_CLASS}
                     >
                       <p className="font-mono text-xs text-primary">w/{wiki.id}</p>
                       <p className="text-sm font-medium text-white">{wiki.displayName}</p>
@@ -75,15 +92,12 @@ export default async function SearchPage(props: {
                     </Link>
                   </li>
                 ))}
-                {wikis.length === 0 && (
-                  <li className="text-sm text-slate-500">No subwiki matches found.</li>
-                )}
               </ul>
             )}
           </section>
 
           {!onlyWikis && (
-            <section className="ascii-panel rounded-lg border border-white/10 bg-[#0a0a0a] p-4">
+            <section className={PANEL_CLASS}>
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
                 Post results ({posts.length})
               </h2>
@@ -95,7 +109,7 @@ export default async function SearchPage(props: {
                     <li key={post.id}>
                       <Link
                         href={`/question/${post.id}`}
-                        className="block rounded-md border border-white/10 bg-[#121212] px-3 py-2 transition-colors hover:border-white/20"
+                        className={RESULT_CARD_CLASS}
                       >
                         <div className="mb-1 flex items-center gap-2">
                           <span className="font-mono text-[10px] text-primary">w/{post.wikiId}</span>

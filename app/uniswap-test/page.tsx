@@ -1,28 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { createPublicClient, custom, decodeEventLog, encodeFunctionData, parseUnits } from "viem";
-import type { EIP1193Provider, Hex } from "viem";
+import { decodeEventLog, encodeFunctionData, parseUnits } from "viem";
 import type { TransactionReceipt } from "viem";
 import { base } from "viem/chains";
-
-type Eip1193ProviderLike = {
-  request: (args: { method: string; params?: unknown[] | Record<string, unknown> }) => Promise<unknown>;
-};
+import { BASE_WETH_ADDRESS, resolveBaseExplorerTxBaseUrl } from "@/lib/baseNetwork";
+import {
+  buildExplorerTxUrl,
+  buildPermitTypedDataPayload,
+  buildTransactionRequest,
+  normalizeAddress,
+  readErc20Balance,
+  sendTransaction,
+  type Eip1193ProviderLike,
+  waitForTransactionReceipt
+} from "@/lib/evmClientUtils";
 
 type Direction = "usdc_to_eth" | "eth_to_usdc";
-
-const WETH = "0x4200000000000000000000000000000000000006";
-
-const ERC20_ABI = [
-  {
-    type: "function",
-    name: "balanceOf",
-    stateMutability: "view",
-    inputs: [{ name: "owner", type: "address" }],
-    outputs: [{ name: "balance", type: "uint256" }]
-  }
-] as const;
 
 const WETH_WITHDRAW_ABI = [
   {
@@ -61,95 +55,7 @@ type SwapTxResponse = {
   error?: string;
   message?: string;
 };
-
-function normalizeAddress(value: string | null | undefined): string | null {
-  const raw = String(value ?? "").trim();
-  return /^0x[a-fA-F0-9]{40}$/.test(raw) ? raw.toLowerCase() : null;
-}
-
-function toHexQuantity(value: unknown): Hex | undefined {
-  if (value == null) return undefined;
-  if (typeof value === "bigint") return `0x${value.toString(16)}`;
-  if (typeof value === "number") return `0x${BigInt(Math.floor(value)).toString(16)}`;
-  const raw = String(value).trim();
-  if (!raw) return undefined;
-  try {
-    return `0x${BigInt(raw).toString(16)}`;
-  } catch {
-    return undefined;
-  }
-}
-
-function buildTx(input: { txRequest: TxRequest; from: string }): Record<string, unknown> {
-  const tx = input.txRequest;
-  const gas = toHexQuantity(tx.gas ?? tx.gasLimit);
-  const value = toHexQuantity(tx.value ?? "0");
-  const gasPrice = toHexQuantity(tx.gasPrice);
-  const maxFeePerGas = toHexQuantity(tx.maxFeePerGas);
-  const maxPriorityFeePerGas = toHexQuantity(tx.maxPriorityFeePerGas);
-  const nonce = toHexQuantity(tx.nonce);
-
-  const payload: Record<string, unknown> = {
-    from: input.from,
-    to: String(tx.to ?? ""),
-    data: String(tx.data ?? "0x"),
-    value: value ?? "0x0"
-  };
-
-  if (gas) payload.gas = gas;
-  if (nonce) payload.nonce = nonce;
-  if (maxFeePerGas || maxPriorityFeePerGas) {
-    if (maxFeePerGas) payload.maxFeePerGas = maxFeePerGas;
-    if (maxPriorityFeePerGas) payload.maxPriorityFeePerGas = maxPriorityFeePerGas;
-  } else if (gasPrice) {
-    payload.gasPrice = gasPrice;
-  }
-
-  return payload;
-}
-
-async function sendTransaction(provider: Eip1193ProviderLike, tx: Record<string, unknown>): Promise<`0x${string}`> {
-  const hash = await provider.request({ method: "eth_sendTransaction", params: [tx] });
-  return String(hash) as `0x${string}`;
-}
-
-function txUrl(hash: string): string {
-  return `https://basescan.org/tx/${hash}`;
-}
-
-function buildPermitTypedData(permitData: Record<string, unknown>): Record<string, unknown> | null {
-  const domain = permitData.domain;
-  const types = permitData.types;
-  const primaryType = permitData.primaryType;
-  const message = permitData.message ?? permitData.values ?? permitData.value;
-  if (!domain || !types || !message) return null;
-
-  const domainRecord = domain as Record<string, unknown>;
-  const typeRecord = types as Record<string, unknown>;
-  const existingDomain = Array.isArray(typeRecord.EIP712Domain) ? typeRecord.EIP712Domain : null;
-  const domainFields =
-    existingDomain ??
-    [
-      domainRecord.name != null ? { name: "name", type: "string" } : null,
-      domainRecord.version != null ? { name: "version", type: "string" } : null,
-      domainRecord.chainId != null ? { name: "chainId", type: "uint256" } : null,
-      domainRecord.verifyingContract != null ? { name: "verifyingContract", type: "address" } : null,
-      domainRecord.salt != null ? { name: "salt", type: "bytes32" } : null
-    ].filter(Boolean);
-
-  return {
-    domain,
-    types: {
-      ...typeRecord,
-      EIP712Domain: domainFields
-    },
-    primaryType:
-      typeof primaryType === "string"
-        ? primaryType
-        : Object.keys(typeRecord).find((key) => key !== "EIP712Domain"),
-    message
-  };
-}
+const BASE_EXPLORER_TX = resolveBaseExplorerTxBaseUrl(base.id);
 
 export default function UniswapTestPage() {
   const [connectedAddress, setConnectedAddress] = useState<string | null>(null);
@@ -183,32 +89,10 @@ export default function UniswapTestPage() {
     }
   }
 
-  async function waitForReceipt(provider: Eip1193ProviderLike, hash: `0x${string}`): Promise<TransactionReceipt> {
-    const client = createPublicClient({
-      chain: base,
-      transport: custom(provider as EIP1193Provider)
-    });
-    return client.waitForTransactionReceipt({ hash });
-  }
-
-  async function readBalance(provider: Eip1193ProviderLike, token: string, owner: string, blockNumber?: bigint): Promise<bigint> {
-    const client = createPublicClient({
-      chain: base,
-      transport: custom(provider as EIP1193Provider)
-    });
-    return client.readContract({
-      address: token as `0x${string}`,
-      abi: ERC20_ABI,
-      functionName: "balanceOf",
-      args: [owner as `0x${string}`],
-      ...(blockNumber != null ? { blockNumber } : {})
-    });
-  }
-
   function getWethReceivedFromReceipt(receipt: TransactionReceipt, recipient: string): bigint {
     const target = recipient.toLowerCase();
     return receipt.logs.reduce((sum, log) => {
-      if (log.address.toLowerCase() !== WETH) return sum;
+      if (log.address.toLowerCase() !== BASE_WETH_ADDRESS) return sum;
       try {
         const decoded = decodeEventLog({
           abi: ERC20_TRANSFER_EVENT_ABI,
@@ -242,8 +126,11 @@ export default function UniswapTestPage() {
 
     if (payload.approvalRequired && payload.txRequest) {
       setStatus("Submitting approval...");
-      const hash = await sendTransaction(input.provider, buildTx({ txRequest: payload.txRequest, from: input.walletAddress }));
-      await waitForReceipt(input.provider, hash);
+      const hash = await sendTransaction(
+        input.provider,
+        buildTransactionRequest({ txRequest: payload.txRequest, from: input.walletAddress })
+      );
+      await waitForTransactionReceipt({ provider: input.provider, chain: base, hash });
       setTxs((prev) => [...prev, { label: "approval", hash }]);
     }
   }
@@ -277,17 +164,24 @@ export default function UniswapTestPage() {
         const wrapWei = parseUnits(amount, 18);
         const wrapHash = await sendTransaction(provider, {
           from: walletAddress,
-          to: WETH,
+          to: BASE_WETH_ADDRESS,
           data: "0xd0e30db0",
           value: `0x${wrapWei.toString(16)}`
         });
-        await waitForReceipt(provider, wrapHash);
+        await waitForTransactionReceipt({ provider, chain: base, hash: wrapHash });
         setTxs((prev) => [...prev, { label: "wrap", hash: wrapHash }]);
       }
 
       await maybeApprove({ walletAddress, tokenIn, amountInBaseUnits, provider });
 
-      const wethBefore = usdcToEth ? await readBalance(provider, WETH, walletAddress) : BigInt(0);
+      const wethBefore = usdcToEth
+        ? await readErc20Balance({
+            provider,
+            chain: base,
+            tokenAddress: BASE_WETH_ADDRESS as `0x${string}`,
+            owner: walletAddress as `0x${string}`
+          })
+        : BigInt(0);
 
       setStatus("Fetching swap transaction...");
       const quoteRes = await fetch(
@@ -300,7 +194,7 @@ export default function UniswapTestPage() {
 
       let signature: string | undefined;
       if (quotePayload.permitData) {
-        const typedData = buildPermitTypedData(quotePayload.permitData);
+        const typedData = buildPermitTypedDataPayload(quotePayload.permitData);
         if (!typedData) {
           throw new Error("Invalid permitData returned by quote.");
         }
@@ -326,8 +220,11 @@ export default function UniswapTestPage() {
       }
 
       setStatus("Submitting swap...");
-      const swapHash = await sendTransaction(provider, buildTx({ txRequest: swapPayload.tx, from: walletAddress }));
-      const swapReceipt = await waitForReceipt(provider, swapHash);
+      const swapHash = await sendTransaction(
+        provider,
+        buildTransactionRequest({ txRequest: swapPayload.tx, from: walletAddress })
+      );
+      const swapReceipt = await waitForTransactionReceipt({ provider, chain: base, hash: swapHash });
       setTxs((prev) => [...prev, { label: "swap", hash: swapHash }]);
       if (swapReceipt.status !== "success") {
         throw new Error(`Swap reverted on-chain: ${swapHash}`);
@@ -338,10 +235,21 @@ export default function UniswapTestPage() {
         const wethFromLogs = getWethReceivedFromReceipt(swapReceipt, walletAddress);
         let deltaFromBalance = BigInt(0);
         try {
-          const wethAtSwapBlock = await readBalance(provider, WETH, walletAddress, swapReceipt.blockNumber);
+          const wethAtSwapBlock = await readErc20Balance({
+            provider,
+            chain: base,
+            tokenAddress: BASE_WETH_ADDRESS as `0x${string}`,
+            owner: walletAddress as `0x${string}`,
+            blockNumber: swapReceipt.blockNumber
+          });
           deltaFromBalance = wethAtSwapBlock > wethBefore ? wethAtSwapBlock - wethBefore : BigInt(0);
         } catch {
-          const wethAfter = await readBalance(provider, WETH, walletAddress);
+          const wethAfter = await readErc20Balance({
+            provider,
+            chain: base,
+            tokenAddress: BASE_WETH_ADDRESS as `0x${string}`,
+            owner: walletAddress as `0x${string}`
+          });
           deltaFromBalance = wethAfter > wethBefore ? wethAfter - wethBefore : BigInt(0);
         }
         const delta = deltaFromBalance > wethFromLogs ? deltaFromBalance : wethFromLogs;
@@ -356,11 +264,11 @@ export default function UniswapTestPage() {
         });
         const unwrapHash = await sendTransaction(provider, {
           from: walletAddress,
-          to: WETH,
+          to: BASE_WETH_ADDRESS,
           data: withdrawData,
           value: "0x0"
         });
-        await waitForReceipt(provider, unwrapHash);
+        await waitForTransactionReceipt({ provider, chain: base, hash: unwrapHash });
         setTxs((prev) => [...prev, { label: "unwrap", hash: unwrapHash }]);
       }
 
@@ -436,7 +344,12 @@ export default function UniswapTestPage() {
           {txs.map((tx) => (
             <li key={`${tx.label}-${tx.hash}`} className="font-mono">
               {tx.label}:{" "}
-              <a href={txUrl(tx.hash)} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+              <a
+                href={buildExplorerTxUrl(BASE_EXPLORER_TX, tx.hash)}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline"
+              >
                 {tx.hash}
               </a>
             </li>

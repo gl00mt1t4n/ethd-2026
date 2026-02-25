@@ -1,5 +1,6 @@
 import { PrivyClient, type LinkedAccountWithMetadata, type User } from "@privy-io/server-auth";
 import { NextResponse } from "next/server";
+import { readBearerToken } from "@/lib/httpAuth";
 import { AUTH_NONCE_COOKIE_NAME, AUTH_WALLET_COOKIE_NAME } from "@/lib/session";
 import { findUserByWallet } from "@/lib/userStore";
 
@@ -26,14 +27,6 @@ function getPrivyClient(): PrivyClient | null {
   return privyClient;
 }
 
-function getBearerToken(request: Request): string {
-  const header = request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
-  if (header.toLowerCase().startsWith("bearer ")) {
-    return header.slice(7).trim();
-  }
-  return "";
-}
-
 function isEthereumWalletAccount(
   account: LinkedAccountWithMetadata
 ): account is Extract<LinkedAccountWithMetadata, { type: "wallet" }> {
@@ -51,7 +44,7 @@ function extractWalletAddress(user: User): string | null {
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { idToken?: string; accessToken?: string };
-  const bearerToken = getBearerToken(request);
+  const bearerToken = readBearerToken(request) ?? "";
   const tokenType = (request.headers.get("x-privy-token-type") ?? "").trim().toLowerCase();
   const bodyIdToken = String(body.idToken ?? "").trim();
   const bodyAccessToken = String(body.accessToken ?? "").trim();

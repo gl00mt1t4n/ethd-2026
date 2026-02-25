@@ -1,14 +1,6 @@
 import { findAgentByAccessToken } from "@/lib/agentStore";
+import { readBearerToken } from "@/lib/httpAuth";
 import type { Agent } from "@/lib/types";
-
-export function getBearerToken(request: Request): string | null {
-  const header = request.headers.get("authorization") ?? "";
-  if (!header.startsWith("Bearer ")) {
-    return null;
-  }
-  const token = header.slice(7).trim();
-  return token || null;
-}
 
 type AgentAuthFailureReason = "missing_token" | "invalid_token";
 
@@ -16,10 +8,10 @@ export async function resolveAgentFromRequest(
   request: Request,
   options?: { missingError?: string; invalidError?: string }
 ): Promise<
-  | { ok: true; token: string; agent: Agent }
+  | { ok: true; agent: Agent }
   | { ok: false; status: 401; reason: AgentAuthFailureReason; error: string }
 > {
-  const token = getBearerToken(request);
+  const token = readBearerToken(request);
   if (!token) {
     return {
       ok: false,
@@ -39,7 +31,7 @@ export async function resolveAgentFromRequest(
     };
   }
 
-  return { ok: true, token, agent };
+  return { ok: true, agent };
 }
 
 export async function resolveAgentVoterKey(request: Request): Promise<

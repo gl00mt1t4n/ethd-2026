@@ -2,10 +2,26 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useWallets } from "@privy-io/react-auth";
-import { createPublicClient, custom, encodeFunctionData, formatUnits, http, parseUnits } from "viem";
-import type { Hex } from "viem";
-import type { EIP1193Provider } from "viem";
+import { createPublicClient, encodeFunctionData, formatUnits, http, parseUnits } from "viem";
 import { base, baseSepolia } from "viem/chains";
+import {
+  BASE_WETH_ADDRESS,
+  resolveBaseChainById,
+  resolveBaseChainIdFromCaip,
+  resolveBaseExplorerTxBaseUrl,
+  resolveBaseUsdcAddress,
+  resolveFundingCaip
+} from "@/lib/baseNetwork";
+import {
+  buildExplorerTxUrl,
+  buildPermitTypedDataPayload,
+  buildTransactionRequest,
+  normalizeAddress,
+  readErc20Balance,
+  sendTransaction,
+  type Eip1193ProviderLike,
+  waitForTransactionReceipt
+} from "@/lib/evmClientUtils";
 
 const ERC20_ABI = [
   {
@@ -59,10 +75,6 @@ type FundingSwapStatusResponse = {
   error?: string;
 };
 
-type Eip1193ProviderLike = {
-  request: (args: { method: string; params?: unknown[] | Record<string, unknown> }) => Promise<unknown>;
-};
-
 type KnownFundingToken = {
   symbol: string;
   address: string;
@@ -74,204 +86,51 @@ type TokenOption = KnownFundingToken & {
   balance: bigint;
 };
 
-function normalizeAddress(value: string | null | undefined): string | null {
-  const raw = String(value ?? "").trim();
-  return /^0x[a-fA-F0-9]{40}$/.test(raw) ? raw.toLowerCase() : null;
-}
-
-function networkCaipForActiveNetwork(activeBidNetwork: "base_mainnet" | "base_sepolia" | "kite_testnet"): string {
-  if (activeBidNetwork === "base_sepolia") {
-    return "eip155:84532";
-  }
-  return "eip155:8453";
-}
-
-function defaultUsdcAddress(caip: string): string {
-  if (caip === "eip155:84532") {
-    return "0x036CbD53842c5426634e7929541eC2318f3dCF7e".toLowerCase();
-  }
-  return "0x833589fCD6EDb6E08f4c7C32D4f71b54bdA02913".toLowerCase();
-}
-
-function wethAddress(): string {
-  return "0x4200000000000000000000000000000000000006".toLowerCase();
-}
-
-function chainIdFromCaip(caip: string): number {
-  if (caip === "eip155:84532") {
-    return baseSepolia.id;
-  }
-  return base.id;
-}
-
 function knownFundingTokens(chainId: number): KnownFundingToken[] {
   const eth: KnownFundingToken = { symbol: "ETH", address: "native", decimals: 18, isNative: true };
   if (chainId === base.id) {
     return [
       eth,
       { symbol: "USDC", address: "0x833589fCD6EDb6E08f4c7C32D4f71b54bdA02913".toLowerCase(), decimals: 6 },
-      { symbol: "WETH", address: wethAddress(), decimals: 18 },
-      { symbol: "cbBTC", address: "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf".toLowerCase(), decimals: 8 }
-      ,{ symbol: "cbETH", address: "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22".toLowerCase(), decimals: 18 }
-      ,{ symbol: "USDT", address: "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2".toLowerCase(), decimals: 6 }
-      ,{ symbol: "DAI", address: "0x50c5725949a6f0c72e6c4a641f24049a917db0cb".toLowerCase(), decimals: 18 }
-      ,{ symbol: "EURC", address: "0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42".toLowerCase(), decimals: 6 }
-      ,{ symbol: "AERO", address: "0x940181a94a35a4569e4529a3cdfb74e38fd98631".toLowerCase(), decimals: 18 }
-      ,{ symbol: "DEGEN", address: "0x4ed4e862860bed51a9570b96d89af5e1b0efefed".toLowerCase(), decimals: 18 }
-      ,{ symbol: "TOSHI", address: "0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4".toLowerCase(), decimals: 18 }
-      ,{ symbol: "WELL", address: "0xa88594d404727625a9437c3f886c7643872296ae".toLowerCase(), decimals: 18 }
-      ,{ symbol: "UNI", address: "0xc3de830ea07524a0761646a6a4e4be0e114a3c83".toLowerCase(), decimals: 18 }
-      ,{ symbol: "AAVE", address: "0x63706e401c06ac8513145b7687a14804d17f814b".toLowerCase(), decimals: 18 }
-      ,{ symbol: "COMP", address: "0x9e1028f5f1d5ede59748ffcee5532509976840e0".toLowerCase(), decimals: 18 }
-      ,{ symbol: "CRV", address: "0x8ee73c484a26e0a5df2ee2a4960b789967dd0415".toLowerCase(), decimals: 18 }
-      ,{ symbol: "ODOS", address: "0xca73ed1815e5915489570014e024b7ebe65de679".toLowerCase(), decimals: 18 }
-      ,{ symbol: "PENDLE", address: "0xa99f6e6785da0f5d6fb42495fe424bce029eeb3e".toLowerCase(), decimals: 18 }
-      ,{ symbol: "PRIME", address: "0xfa980ced6895ac314e7de34ef1bfae90a5add21b".toLowerCase(), decimals: 18 }
-      ,{ symbol: "SEAM", address: "0x1c7a460413dd4e964f96d8dfc56e7223ce88cd85".toLowerCase(), decimals: 18 }
-      ,{ symbol: "WCT", address: "0xef4461891dfb3ac8572ccf7c794664a8dd927945".toLowerCase(), decimals: 18 }
-      ,{ symbol: "1INCH", address: "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe".toLowerCase(), decimals: 18 }
-      ,{ symbol: "PEPE", address: "0xb4fde59a779991bfb6a52253b51947828b982be3".toLowerCase(), decimals: 18 }
-      ,{ symbol: "ZRO", address: "0x6985884c4392d348587b19cb9eaaf157f13271cd".toLowerCase(), decimals: 18 }
-      ,{ symbol: "ZORA", address: "0x1111111111166b7fe7bd91427724b487980afc69".toLowerCase(), decimals: 18 }
-      ,{ symbol: "USDbC", address: "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca".toLowerCase(), decimals: 6 }
+      { symbol: "WETH", address: BASE_WETH_ADDRESS, decimals: 18 },
+      { symbol: "cbBTC", address: "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf".toLowerCase(), decimals: 8 },
+      { symbol: "cbETH", address: "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22".toLowerCase(), decimals: 18 },
+      { symbol: "USDT", address: "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2".toLowerCase(), decimals: 6 },
+      { symbol: "DAI", address: "0x50c5725949a6f0c72e6c4a641f24049a917db0cb".toLowerCase(), decimals: 18 },
+      { symbol: "EURC", address: "0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42".toLowerCase(), decimals: 6 },
+      { symbol: "AERO", address: "0x940181a94a35a4569e4529a3cdfb74e38fd98631".toLowerCase(), decimals: 18 },
+      { symbol: "DEGEN", address: "0x4ed4e862860bed51a9570b96d89af5e1b0efefed".toLowerCase(), decimals: 18 },
+      { symbol: "TOSHI", address: "0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4".toLowerCase(), decimals: 18 },
+      { symbol: "WELL", address: "0xa88594d404727625a9437c3f886c7643872296ae".toLowerCase(), decimals: 18 },
+      { symbol: "UNI", address: "0xc3de830ea07524a0761646a6a4e4be0e114a3c83".toLowerCase(), decimals: 18 },
+      { symbol: "AAVE", address: "0x63706e401c06ac8513145b7687a14804d17f814b".toLowerCase(), decimals: 18 },
+      { symbol: "COMP", address: "0x9e1028f5f1d5ede59748ffcee5532509976840e0".toLowerCase(), decimals: 18 },
+      { symbol: "CRV", address: "0x8ee73c484a26e0a5df2ee2a4960b789967dd0415".toLowerCase(), decimals: 18 },
+      { symbol: "ODOS", address: "0xca73ed1815e5915489570014e024b7ebe65de679".toLowerCase(), decimals: 18 },
+      { symbol: "PENDLE", address: "0xa99f6e6785da0f5d6fb42495fe424bce029eeb3e".toLowerCase(), decimals: 18 },
+      { symbol: "PRIME", address: "0xfa980ced6895ac314e7de34ef1bfae90a5add21b".toLowerCase(), decimals: 18 },
+      { symbol: "SEAM", address: "0x1c7a460413dd4e964f96d8dfc56e7223ce88cd85".toLowerCase(), decimals: 18 },
+      { symbol: "WCT", address: "0xef4461891dfb3ac8572ccf7c794664a8dd927945".toLowerCase(), decimals: 18 },
+      { symbol: "1INCH", address: "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe".toLowerCase(), decimals: 18 },
+      { symbol: "PEPE", address: "0xb4fde59a779991bfb6a52253b51947828b982be3".toLowerCase(), decimals: 18 },
+      { symbol: "ZRO", address: "0x6985884c4392d348587b19cb9eaaf157f13271cd".toLowerCase(), decimals: 18 },
+      { symbol: "ZORA", address: "0x1111111111166b7fe7bd91427724b487980afc69".toLowerCase(), decimals: 18 },
+      { symbol: "USDbC", address: "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca".toLowerCase(), decimals: 6 }
     ];
   }
   if (chainId === baseSepolia.id) {
     return [
       eth,
       { symbol: "USDC", address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e".toLowerCase(), decimals: 6 },
-      { symbol: "WETH", address: wethAddress(), decimals: 18 }
+      { symbol: "WETH", address: BASE_WETH_ADDRESS, decimals: 18 }
     ];
   }
 
   return [
     eth,
     { symbol: "USDC", address: "0x833589fCD6EDb6E08f4c7C32D4f71b54bdA02913".toLowerCase(), decimals: 6 },
-    { symbol: "WETH", address: wethAddress(), decimals: 18 }
+    { symbol: "WETH", address: BASE_WETH_ADDRESS, decimals: 18 }
   ];
-}
-
-function chainFromId(chainId: number) {
-  return chainId === base.id ? base : baseSepolia;
-}
-
-function toHexQuantity(value: unknown): Hex | undefined {
-  if (value == null) return undefined;
-  if (typeof value === "bigint") return `0x${value.toString(16)}`;
-  if (typeof value === "number") return `0x${BigInt(Math.floor(value)).toString(16)}`;
-  const raw = String(value).trim();
-  if (!raw) return undefined;
-  try {
-    const parsed = raw.startsWith("0x") ? BigInt(raw) : BigInt(raw);
-    return `0x${parsed.toString(16)}`;
-  } catch {
-    return undefined;
-  }
-}
-
-function buildTxRequest(input: {
-  txRequest: Record<string, unknown>;
-  from: string;
-}): Record<string, unknown> {
-  const tx = input.txRequest;
-  const gas = toHexQuantity(tx.gas ?? tx.gasLimit);
-  const value = toHexQuantity(tx.value ?? "0");
-  const gasPrice = toHexQuantity(tx.gasPrice);
-  const maxFeePerGas = toHexQuantity(tx.maxFeePerGas);
-  const maxPriorityFeePerGas = toHexQuantity(tx.maxPriorityFeePerGas);
-  const nonce = toHexQuantity(tx.nonce);
-
-  const payload: Record<string, unknown> = {
-    from: input.from,
-    to: String(tx.to ?? ""),
-    data: String(tx.data ?? "0x"),
-    value: value ?? "0x0"
-  };
-
-  if (gas) payload.gas = gas;
-  if (nonce) payload.nonce = nonce;
-  if (maxFeePerGas || maxPriorityFeePerGas) {
-    if (maxFeePerGas) payload.maxFeePerGas = maxFeePerGas;
-    if (maxPriorityFeePerGas) payload.maxPriorityFeePerGas = maxPriorityFeePerGas;
-  } else if (gasPrice) {
-    payload.gasPrice = gasPrice;
-  }
-
-  return payload;
-}
-
-function buildPermitTypedData(permitData: Record<string, unknown>): Record<string, unknown> | null {
-  const domain = permitData.domain;
-  const types = permitData.types;
-  const primaryType = permitData.primaryType;
-  const message = permitData.message ?? permitData.values ?? permitData.value;
-  if (!domain || !types || !message) return null;
-
-  const domainRecord = domain as Record<string, unknown>;
-  const typeRecord = types as Record<string, unknown>;
-  const existingDomain = Array.isArray(typeRecord.EIP712Domain) ? typeRecord.EIP712Domain : null;
-  const domainFields =
-    existingDomain ??
-    [
-      domainRecord.name != null ? { name: "name", type: "string" } : null,
-      domainRecord.version != null ? { name: "version", type: "string" } : null,
-      domainRecord.chainId != null ? { name: "chainId", type: "uint256" } : null,
-      domainRecord.verifyingContract != null ? { name: "verifyingContract", type: "address" } : null,
-      domainRecord.salt != null ? { name: "salt", type: "bytes32" } : null
-    ].filter(Boolean);
-
-  return {
-    domain,
-    types: {
-      ...typeRecord,
-      EIP712Domain: domainFields
-    },
-    primaryType:
-      typeof primaryType === "string"
-        ? primaryType
-        : Object.keys(typeRecord).find((key) => key !== "EIP712Domain"),
-    message
-  };
-}
-
-function txExplorerBase(chainId: number): string {
-  return chainId === base.id ? "https://basescan.org/tx/" : "https://sepolia.basescan.org/tx/";
-}
-
-async function sendTransaction(provider: Eip1193ProviderLike, tx: Record<string, unknown>): Promise<`0x${string}`> {
-  const hash = await provider.request({ method: "eth_sendTransaction", params: [tx] });
-  return String(hash) as `0x${string}`;
-}
-
-async function waitForReceipt(
-  provider: Eip1193ProviderLike,
-  chainId: number,
-  hash: `0x${string}`
-): Promise<void> {
-  const publicClient = createPublicClient({
-    chain: chainFromId(chainId),
-    transport: custom(provider as EIP1193Provider)
-  });
-  await publicClient.waitForTransactionReceipt({ hash });
-}
-
-async function readUsdcBalance(
-  provider: Eip1193ProviderLike,
-  chainId: number,
-  usdcAddress: string,
-  owner: string
-): Promise<bigint> {
-  const publicClient = createPublicClient({
-    chain: chainFromId(chainId),
-    transport: custom(provider as EIP1193Provider)
-  });
-
-  return publicClient.readContract({
-    address: usdcAddress as `0x${string}`,
-    abi: ERC20_ABI,
-    functionName: "balanceOf",
-    args: [owner as `0x${string}`]
-  });
 }
 
 async function readKnownTokenBalances(input: {
@@ -280,7 +139,7 @@ async function readKnownTokenBalances(input: {
   tokens: KnownFundingToken[];
 }): Promise<TokenOption[]> {
   const publicClient = createPublicClient({
-    chain: chainFromId(input.chainId),
+    chain: resolveBaseChainById(input.chainId),
     transport: http()
   });
 
@@ -320,9 +179,9 @@ type AgentFundingButtonProps = {
 
 export function AgentFundingButton(props: AgentFundingButtonProps) {
   const { wallets, ready } = useWallets();
-  const networkCaip = useMemo(() => networkCaipForActiveNetwork(props.activeBidNetwork), [props.activeBidNetwork]);
-  const defaultChainId = chainIdFromCaip(networkCaip);
-  const usdcAddress = defaultUsdcAddress(networkCaip);
+  const networkCaip = useMemo(() => resolveFundingCaip(props.activeBidNetwork), [props.activeBidNetwork]);
+  const defaultChainId = resolveBaseChainIdFromCaip(networkCaip);
+  const usdcAddress = resolveBaseUsdcAddress(defaultChainId);
   const tokens = useMemo(() => knownFundingTokens(defaultChainId), [defaultChainId]);
   const isBaseMainnetFunding = props.activeBidNetwork === "base_mainnet";
   const unsupportedFundingMessage =
@@ -437,13 +296,17 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
         setStatus("Wrapping ETH to WETH...");
         const wrapHash = await sendTransaction(provider, {
           from: walletAddress,
-          to: wethAddress(),
+          to: BASE_WETH_ADDRESS,
           data: "0xd0e30db0",
           value: `0x${wrapAmountWei.toString(16)}`
         });
-        await waitForReceipt(provider, activeChainId, wrapHash);
+        await waitForTransactionReceipt({
+          provider,
+          chain: resolveBaseChainById(activeChainId),
+          hash: wrapHash
+        });
         setTxHashes((prev) => [...prev, { label: "wrap", hash: wrapHash, chainId: activeChainId }]);
-        normalizedTokenIn = wethAddress();
+        normalizedTokenIn = BASE_WETH_ADDRESS;
       }
 
       if (!normalizedTokenIn) {
@@ -482,27 +345,40 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
           data: transferData,
           value: "0x0"
         });
-        await waitForReceipt(provider, preparedChainId, transferHash);
+        await waitForTransactionReceipt({
+          provider,
+          chain: resolveBaseChainById(preparedChainId),
+          hash: transferHash
+        });
         setTxHashes([{ label: "deposit", hash: transferHash, chainId: preparedChainId }]);
         setStatus("Deposit complete.");
         return;
       }
 
-      const usdcBefore = await readUsdcBalance(provider, preparedChainId, prepare.usdcAddress, walletAddress);
+      const usdcBefore = await readErc20Balance({
+        provider,
+        chain: resolveBaseChainById(preparedChainId),
+        tokenAddress: prepare.usdcAddress as `0x${string}`,
+        owner: walletAddress as `0x${string}`
+      });
 
       if (prepare.approval?.required && prepare.approval.txRequest) {
         setStatus("Sending token approval...");
         const approvalHash = await sendTransaction(
           provider,
-          buildTxRequest({ txRequest: prepare.approval.txRequest, from: walletAddress })
+          buildTransactionRequest({ txRequest: prepare.approval.txRequest, from: walletAddress })
         );
-        await waitForReceipt(provider, preparedChainId, approvalHash);
+        await waitForTransactionReceipt({
+          provider,
+          chain: resolveBaseChainById(preparedChainId),
+          hash: approvalHash
+        });
         setTxHashes((prev) => [...prev, { label: "approval", hash: approvalHash, chainId: preparedChainId }]);
       }
 
       let signature: string | null = null;
       if (prepare.permitData) {
-        const typedData = buildPermitTypedData(prepare.permitData);
+        const typedData = buildPermitTypedDataPayload(prepare.permitData);
         if (!typedData) {
           throw new Error("Invalid permitData returned by Uniswap API.");
         }
@@ -534,9 +410,13 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
       setStatus("Submitting swap...");
       const swapHash = await sendTransaction(
         provider,
-        buildTxRequest({ txRequest: swapPayload.txRequest, from: walletAddress })
+        buildTransactionRequest({ txRequest: swapPayload.txRequest, from: walletAddress })
       );
-      await waitForReceipt(provider, preparedChainId, swapHash);
+      await waitForTransactionReceipt({
+        provider,
+        chain: resolveBaseChainById(preparedChainId),
+        hash: swapHash
+      });
       setTxHashes((prev) => [...prev, { label: "swap", hash: swapHash, chainId: preparedChainId }]);
 
       try {
@@ -567,7 +447,12 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
       } catch {}
 
       setStatus("Calculating USDC received...");
-      const usdcAfter = await readUsdcBalance(provider, preparedChainId, prepare.usdcAddress, walletAddress);
+      const usdcAfter = await readErc20Balance({
+        provider,
+        chain: resolveBaseChainById(preparedChainId),
+        tokenAddress: prepare.usdcAddress as `0x${string}`,
+        owner: walletAddress as `0x${string}`
+      });
       const receivedUsdc = usdcAfter - usdcBefore;
       if (receivedUsdc <= BigInt(0)) {
         throw new Error("Swap completed but no USDC was received.");
@@ -586,7 +471,11 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
         data: transferData,
         value: "0x0"
       });
-      await waitForReceipt(provider, preparedChainId, depositHash);
+      await waitForTransactionReceipt({
+        provider,
+        chain: resolveBaseChainById(preparedChainId),
+        hash: depositHash
+      });
       setTxHashes((prev) => [...prev, { label: "deposit", hash: depositHash, chainId: preparedChainId }]);
       setStatus("Swap + deposit complete.");
     } catch (error) {
@@ -707,7 +596,7 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
                   <li key={`${entry.label}-${entry.hash}`}>
                     {entry.label}:{" "}
                     <a
-                      href={`${txExplorerBase(entry.chainId)}${entry.hash}`}
+                      href={buildExplorerTxUrl(resolveBaseExplorerTxBaseUrl(entry.chainId), entry.hash)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-primary hover:underline"
